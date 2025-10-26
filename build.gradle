@@ -1,0 +1,71 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.5.7'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.marsraver'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+    implementation 'org.jmdns:jmdns:3.6.1'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.15.2'
+    implementation 'org.springframework.boot:spring-boot-starter:3.5.7'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// Test dependencies
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Application plugin for creating executable JARs
+apply plugin: 'application'
+mainClassName = 'com.marsraver.LedFx.LedFxApplication'
+
+// Add task for running LED sketches with any layout
+task runLed(type: JavaExec) {
+    group = 'application'
+    description = 'Runs the LED example sketch using a specified layout. Usage: ./gradlew runLed --args="LayoutName"'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'com.marsraver.LedFx.LedSketchLauncher'
+    args = project.hasProperty('args') ? project.args : ['TwoGrids']
+}
+
+    // Add task for running layout-based sketches (generic)
+    task runLayout(type: JavaExec) {
+        group = 'application'
+        description = 'Runs a layout-based LED sketch using XML configuration. Usage: ./gradlew runLayout --args="LayoutName"'
+        classpath = sourceSets.main.runtimeClasspath
+        mainClass = 'com.marsraver.LedFx.layout.LayoutLauncher'
+        args = project.hasProperty('args') ? project.args : ['TwoGrids']
+    }
+    
+    // Add task for testing WLED devices
+    task testWled(type: JavaExec) {
+        group = 'application'
+        description = 'Tests WLED devices with known patterns'
+        classpath = sourceSets.main.runtimeClasspath
+        mainClass = 'com.marsraver.LedFx.WledTest'
+    }
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

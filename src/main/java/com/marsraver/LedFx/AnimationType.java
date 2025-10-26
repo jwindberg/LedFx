@@ -1,0 +1,67 @@
+package com.marsraver.LedFx;
+
+/**
+ * Enumeration of available animation types for the LED framework.
+ * Each type corresponds to a different visual animation that can be displayed.
+ */
+public enum AnimationType {
+    BOUNCING_BALL("bouncing-ball", "Bouncing Ball Animation"),
+    SPINNING_BEACHBALL("spinning-beachball", "Spinning Beachball Animation"),
+    DJ_LIGHT("dj-light", "DJ Light Animation"),
+    CLOUDS("clouds", "Clouds Animation"),
+    FAST_PLASMA("fast-plasma", "Fast Plasma Animation");
+    
+    private final String id;
+    private final String displayName;
+    
+    AnimationType(String id, String displayName) {
+        this.id = id;
+        this.displayName = displayName;
+    }
+    
+    /**
+     * Gets the unique identifier for this animation type.
+     * 
+     * @return The animation ID
+     */
+    public String getId() {
+        return id;
+    }
+    
+    /**
+     * Gets the human-readable display name for this animation type.
+     * 
+     * @return The display name
+     */
+    public String getDisplayName() {
+        return displayName;
+    }
+    
+    /**
+     * Finds an animation type by its ID.
+     * 
+     * @param id The animation ID to search for
+     * @return The matching AnimationType, or null if not found
+     */
+    public static AnimationType fromId(String id) {
+        for (AnimationType type : values()) {
+            if (type.id.equals(id)) {
+                return type;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Gets all available animation types as a formatted string.
+     * 
+     * @return A string listing all available animations
+     */
+    public static String getAvailableAnimations() {
+        StringBuilder sb = new StringBuilder("Available animations:\n");
+        for (AnimationType type : values()) {
+            sb.append("  ").append(type.id).append(" - ").append(type.displayName).append("\n");
+        }
+        return sb.toString();
+    }
+}

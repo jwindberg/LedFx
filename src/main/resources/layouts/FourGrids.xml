@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<layout name="FourGrids" title="LedFx - Four Grid Layout" windowWidth="500" windowHeight="500">
+    
+    <!-- Top Left LED Grid -->
+    <grid 
+        id="Grid01" 
+        deviceIp="192.168.7.113" 
+        ledCount="256"
+        x="10" 
+        y="10" 
+        width="240" 
+        height="240"
+        gridSize="16"
+        pixelSize="15" />
+    
+    <!-- Top Right LED Grid -->
+    <grid 
+        id="Grid02" 
+        deviceIp="192.168.7.226" 
+        ledCount="256"
+        x="250" 
+        y="10" 
+        width="240" 
+        height="240"
+        gridSize="16"
+        pixelSize="15" />
+    
+    <!-- Bottom Left LED Grid -->
+    <grid 
+        id="Grid03" 
+        deviceIp="192.168.7.181" 
+        ledCount="256"
+        x="10" 
+        y="250" 
+        width="240" 
+        height="240"
+        gridSize="16"
+        pixelSize="15" />
+    
+    <!-- Bottom Right LED Grid -->
+    <grid 
+        id="Grid04" 
+        deviceIp="192.168.7.167" 
+        ledCount="256"
+        x="250" 
+        y="250" 
+        width="240" 
+        height="240"
+        gridSize="16"
+        pixelSize="15" />
+        
+</layout>
