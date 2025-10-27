@@ -2,6 +2,9 @@ package com.marsraver.LedFx;
 
 import com.marsraver.LedFx.layout.LayoutConfig;
 import com.marsraver.LedFx.layout.LayoutLoader;
+import com.marsraver.LedFx.wled.WledArtNetController;
+import lombok.extern.log4j.Log4j2;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -12,6 +15,7 @@ import java.util.Arrays;
  * Generic sketch runner that supports any LED animation.
  * Manages both the sketch window and dual LED grid communication.
  */
+@Log4j2
 public class AnimationSketchRunner {
     
     private static final int TARGET_FPS = 120; // Increased from 60 to 120 FPS
@@ -43,11 +47,9 @@ public class AnimationSketchRunner {
             this.canvas = new AnimationSketchCanvas(layout.getWindowWidth(), layout.getWindowHeight());
             
             // Create the initial animation immediately to prevent null reference
-            this.animation = AnimationFactory.createAnimation(initialAnimationType);
-            if (this.animation != null) {
-                this.animation.init(layout.getWindowWidth(), layout.getWindowHeight(), this.ledGrid);
-            }
-            
+            this.animation = AnimationType.createAnimation(initialAnimationType);
+            this.animation.init(layout.getWindowWidth(), layout.getWindowHeight(), this.ledGrid);
+
             setupWindow(layout.getTitle());
             setupAnimationSelector(initialAnimationType);
             setupAnimation();
@@ -65,11 +67,10 @@ public class AnimationSketchRunner {
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE); // Handle close manually
         frame.setResizable(false);
         
-        // Add window close listener to clear LEDs before exiting
+        // Add window close listener
         frame.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent e) {
-                clearLeds();
                 System.exit(0);
             }
         });
@@ -126,24 +127,21 @@ public class AnimationSketchRunner {
             animationTimer.stop();
         }
         
-        // Create new animation
-        animation = AnimationFactory.createAnimation(animationType);
-        System.out.println("AnimationFactory returned: " + (animation != null ? animation.getClass().getSimpleName() : "null"));
-        if (animation == null) {
-            System.err.println("Failed to create animation: " + animationType);
-            // Clear LEDs when animation fails
-            clearLeds();
-            // Still need to restart timer to keep the UI responsive
-            restartAnimationTimer();
-            return;
+        // Stop the current animation if it exists
+        if (animation != null) {
+            animation.stop();
         }
         
+        // Create new animation
+        animation = AnimationType.createAnimation(animationType);
+        log.debug("AnimationFactory returned: " + animation.getClass().getSimpleName());
+
         // Initialize the new animation
         try {
             animation.init(canvas.getWidth(), canvas.getHeight(), ledGrid);
-            System.out.println("Animation initialized successfully");
+            log.debug("Animation initialized successfully");
         } catch (Exception e) {
-            System.err.println("Error initializing animation: " + e.getMessage());
+            log.error("Error initializing animation: " + e.getMessage());
             e.printStackTrace();
             animation = null;
         }
@@ -151,7 +149,7 @@ public class AnimationSketchRunner {
         // Restart animation timer
         restartAnimationTimer();
         
-        System.out.println("Switched to animation: " + animation.getName());
+        log.debug("Switched to animation: " + animation.getName());
     }
     
     /**
@@ -187,37 +185,19 @@ public class AnimationSketchRunner {
     }
     
     /**
-     * Stops the animation and turns off LEDs on both devices.
+     * Stops the animation.
      */
     public void stop() {
         if (animationTimer != null && animationTimer.isRunning()) {
             animationTimer.stop();
         }
-
-        // Clear all LEDs and turn off both devices
-        clearLeds();
+        
+        // Stop the current animation if it exists
+        if (animation != null) {
+            animation.stop();
+        }
     }
     
-    /**
-     * Clears all LEDs on all devices by setting them to black and turning off the devices.
-     */
-    public void clearLeds() {
-        // Clear the LED grid data
-        ledGrid.clearAllLeds();
-        
-        // Send the cleared data to all devices
-        ledGrid.sendToDevices();
-        
-        // Turn off all WLED devices
-        for (int i = 0; i < ledGrid.getGridCount(); i++) {
-            var controller = ledGrid.getController(i);
-            if (controller != null) {
-                controller.turnOff();
-            }
-        }
-        
-        System.out.println("LEDs cleared and devices turned off");
-    }
     
     /**
      * Custom canvas that handles drawing and dual LED output.
@@ -246,7 +226,7 @@ public class AnimationSketchRunner {
                 ledGrid.sendToDevices();
             } else {
                 // Show error message when animation failed to load
-                System.out.println("DEBUG: animation is null in paintComponent - showing error message");
+                log.debug("DEBUG: animation is null in paintComponent - showing error message");
                 g2d.setColor(Color.RED);
                 g2d.setFont(new Font("Arial", Font.BOLD, 16));
                 String errorMsg = "Animation failed to load - not yet updated for unified LedGrid system";
@@ -276,9 +256,9 @@ public class AnimationSketchRunner {
      * Gets the WLED controller for a specific grid.
      * 
      * @param gridIndex The index of the grid
-     * @return The WLED controller for that grid
+     * @return The WLED Art-Net controller for that grid
      */
-    public com.marsraver.LedFx.wled.WledController getController(int gridIndex) {
+    public WledArtNetController getController(int gridIndex) {
         return ledGrid.getController(gridIndex);
     }
     

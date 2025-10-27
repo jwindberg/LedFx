@@ -1,5 +1,7 @@
 package com.marsraver.LedFx.layout;
 
+import com.marsraver.LedFx.wled.ColorMapping;
+
 /**
  * Configuration for a single LED grid within a layout.
  * Defines the grid's position, size, and device connection.
@@ -15,12 +17,17 @@ public class GridConfig {
     private int height;
     private int gridSize; // 16x16, 32x16, etc.
     private int pixelSize; // Size of each LED pixel in the window
+    private ColorMapping colorMapping; // Color channel order for this device
     
     public GridConfig() {
         // Default constructor for XML binding
     }
     
     public GridConfig(String id, String deviceIp, int ledCount, int x, int y, int width, int height, int gridSize, int pixelSize) {
+        this(id, deviceIp, ledCount, x, y, width, height, gridSize, pixelSize, null);
+    }
+    
+    public GridConfig(String id, String deviceIp, int ledCount, int x, int y, int width, int height, int gridSize, int pixelSize, ColorMapping colorMapping) {
         this.id = id;
         this.deviceIp = deviceIp;
         this.ledCount = ledCount;
@@ -30,6 +37,7 @@ public class GridConfig {
         this.height = height;
         this.gridSize = gridSize;
         this.pixelSize = pixelSize;
+        this.colorMapping = colorMapping;
     }
     
     // Getters and setters
@@ -105,10 +113,18 @@ public class GridConfig {
         this.pixelSize = pixelSize;
     }
     
+    public ColorMapping getColorMapping() {
+        return colorMapping;
+    }
+    
+    public void setColorMapping(ColorMapping colorMapping) {
+        this.colorMapping = colorMapping;
+    }
+    
     @Override
     public String toString() {
-        return String.format("GridConfig{id='%s', deviceIp='%s', ledCount=%d, pos=(%d,%d), size=%dx%d, gridSize=%d, pixelSize=%d}",
-                id, deviceIp, ledCount, x, y, width, height, gridSize, pixelSize);
+        return String.format("GridConfig{id='%s', deviceIp='%s', ledCount=%d, pos=(%d,%d), size=%dx%d, gridSize=%d, pixelSize=%d, colorMapping=%s}",
+                id, deviceIp, ledCount, x, y, width, height, gridSize, pixelSize, colorMapping);
     }
 }
 

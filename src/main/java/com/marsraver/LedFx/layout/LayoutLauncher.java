@@ -2,6 +2,8 @@ package com.marsraver.LedFx.layout;
 
 import com.marsraver.LedFx.AnimationSketchRunner;
 import com.marsraver.LedFx.AnimationType;
+import lombok.extern.log4j.Log4j2;
+
 import javax.swing.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -10,6 +12,7 @@ import java.awt.event.KeyListener;
  * Launcher for layout-based LED sketches with animation selection.
  * Uses XML layout files to configure window size and LED grid placements.
  */
+@Log4j2
 public class LayoutLauncher {
     
     public static void main(String[] args) {
@@ -19,17 +22,17 @@ public class LayoutLauncher {
         }
         
         String layoutName = args[0];
-        String animationTypeId = args.length > 1 ? args[1] : "bouncing-ball";
+        String animationTypeId = args.length > 1 ? args[1] : "test";
         
         try {
-            System.out.println("Loading layout: " + layoutName);
-            System.out.println("Animation: " + animationTypeId);
+            log.debug("Loading layout: " + layoutName);
+            log.debug("Animation: " + animationTypeId);
             
             // Parse animation type
             AnimationType animationType = AnimationType.fromId(animationTypeId);
             if (animationType == null) {
-                System.err.println("Unknown animation type: " + animationTypeId);
-                System.err.println(AnimationType.getAvailableAnimations());
+                log.error("Unknown animation type: " + animationTypeId);
+                log.error(AnimationType.getAvailableAnimations());
                 return;
             }
             
@@ -44,7 +47,6 @@ public class LayoutLauncher {
                 @Override
                 public void keyPressed(KeyEvent e) {
                     if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-                        runner.clearLeds();
                         System.exit(0);
                     }
                 }
@@ -57,11 +59,14 @@ public class LayoutLauncher {
             runner.frame.setFocusable(true);
             runner.frame.requestFocus();
             
-            System.out.println("Layout sketch started!");
-            System.out.println("Use the dropdown to switch animations. Press ESC to exit and turn off LEDs");
+            log.debug("Layout sketch started!");
+            log.debug("Use the dropdown to switch animations. Press ESC to exit");
+            log.debug("");
+            log.debug("Note: WLED devices may revert to their idle state when the app closes.");
+            log.debug("This is normal device behavior and can be configured in WLED settings.");
             
         } catch (Exception e) {
-            System.err.println("Failed to start layout sketch: " + e.getMessage());
+            log.error("Failed to start layout sketch: {}", e.getMessage());
             e.printStackTrace();
             System.exit(1);
         }
@@ -69,21 +74,23 @@ public class LayoutLauncher {
     
     private static void printUsage() {
         System.out.println("Usage: java LayoutLauncher <layout-name> [animation-type]");
-        System.out.println();
+        System.out.println("");
         System.out.println("Available layouts:");
         for (String layout : LayoutLoader.listAvailableLayouts()) {
             System.out.println("  - " + layout);
         }
         System.out.println();
         System.out.println("Available animations:");
-        System.out.println("  - bouncing-ball");
+        System.out.println("  - test");
         System.out.println("  - spinning-beachball");
-        System.out.println("  - dj-light");
-        System.out.println("  - clouds");
+        System.out.println("  - bouncing-ball");
+        System.out.println("  - music-ball");
+        System.out.println("  - video-player");
         System.out.println("  - fast-plasma");
-        System.out.println();
+        System.out.println("  - clouds");
+        System.out.println("");
         System.out.println("Example:");
-        System.out.println("  java LayoutLauncher TwoGrids bouncing-ball");
+        System.out.println("  java LayoutLauncher TwoGrids test");
     }
 }
 

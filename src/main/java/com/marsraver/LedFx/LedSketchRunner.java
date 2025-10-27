@@ -3,6 +3,7 @@ package com.marsraver.LedFx;
 import com.marsraver.LedFx.layout.LayoutConfig;
 import com.marsraver.LedFx.layout.LayoutLoader;
 import com.marsraver.LedFx.wled.WledController;
+import com.marsraver.LedFx.wled.WledArtNetController;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -140,7 +141,7 @@ public class LedSketchRunner {
         
         // Turn off all LED devices when stopping
         for (int i = 0; i < ledGrid.getGridCount(); i++) {
-            WledController controller = ledGrid.getController(i);
+            WledArtNetController controller = ledGrid.getController(i);
             if (controller != null) {
                 controller.turnOff();
             }
@@ -195,9 +196,9 @@ public class LedSketchRunner {
      * Gets the WLED controller for a specific grid.
      * 
      * @param gridIndex The index of the grid
-     * @return The WLED controller
+     * @return The WLED Art-Net controller
      */
-    public WledController getWledController(int gridIndex) {
+    public WledArtNetController getWledController(int gridIndex) {
         return ledGrid.getController(gridIndex);
     }
     
@@ -205,9 +206,9 @@ public class LedSketchRunner {
      * Gets the WLED controller for a grid by ID.
      * 
      * @param gridId The ID of the grid
-     * @return The WLED controller
+     * @return The WLED Art-Net controller
      */
-    public WledController getWledController(String gridId) {
+    public WledArtNetController getWledController(String gridId) {
         return ledGrid.getController(gridId);
     }
 }

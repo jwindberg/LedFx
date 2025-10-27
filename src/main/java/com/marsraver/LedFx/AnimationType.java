@@ -1,15 +1,21 @@
 package com.marsraver.LedFx;
 
+import com.marsraver.LedFx.animations.*;
+
 /**
  * Enumeration of available animation types for the LED framework.
  * Each type corresponds to a different visual animation that can be displayed.
  */
 public enum AnimationType {
-    BOUNCING_BALL("bouncing-ball", "Bouncing Ball Animation"),
+    TEST("test", "Test Animation"),
     SPINNING_BEACHBALL("spinning-beachball", "Spinning Beachball Animation"),
-    DJ_LIGHT("dj-light", "DJ Light Animation"),
+    BOUNCING_BALL("bouncing-ball", "Bouncing Ball Animation"),
+    MUSIC_BALL("music-ball", "Music Ball Animation"),
+    VIDEO_PLAYER("video-player", "Video Player Animation"),
+    FAST_PLASMA("fast-plasma", "Fast Plasma Animation"),
     CLOUDS("clouds", "Clouds Animation"),
-    FAST_PLASMA("fast-plasma", "Fast Plasma Animation");
+    PERLIN_OSCILLATOR("perlin-oscillator", "Perlin Oscillator Animation"),
+    STARFIELD("starfield", "Starfield Animation");
     
     private final String id;
     private final String displayName;
@@ -63,5 +69,26 @@ public enum AnimationType {
             sb.append("  ").append(type.id).append(" - ").append(type.displayName).append("\n");
         }
         return sb.toString();
+    }
+
+
+    public static LedAnimation createAnimation(String animationId) {
+        AnimationType type = AnimationType.fromId(animationId);
+        assert type != null;
+        return createAnimation(type);
+    }
+
+    public static LedAnimation createAnimation(AnimationType animationType) {
+            return switch (animationType) {
+                case TEST -> new TestAnimation();
+                case SPINNING_BEACHBALL -> new SpinningBeachballAnimation();
+                case BOUNCING_BALL -> new BouncingBallAnimation();
+                case MUSIC_BALL -> new MusicBallAnimation();
+                case VIDEO_PLAYER -> new VideoPlayerAnimation();
+                case FAST_PLASMA -> new FastPlasmaAnimation();
+                case CLOUDS -> new CloudsAnimation();
+                case PERLIN_OSCILLATOR -> new PerlinOscillatorAnimation();
+                case STARFIELD -> new StarfieldAnimation();
+            };
     }
 }

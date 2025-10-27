@@ -73,9 +73,9 @@ public class DjLightAnimation implements LedAnimation {
         // Initialize audio capture
         initializeAudio();
         
-        System.out.println("DJ Light Animation initialized");
-        System.out.println("Animation: " + getName());
-        System.out.println("Description: " + getDescription());
+        log.debug("DJ Light Animation initialized");
+        log.debug("Animation: " + getName());
+        log.debug("Description: " + getDescription());
     }
     
     /**
@@ -93,11 +93,11 @@ public class DjLightAnimation implements LedAnimation {
             microphone.start();
             
             audioInitialized = true;
-            System.out.println("Microphone initialized successfully");
+            log.debug("Microphone initialized successfully");
             
         } catch (Exception e) {
-            System.err.println("Failed to initialize microphone: " + e.getMessage());
-            System.err.println("DJ Light effects will be audio-independent");
+            log.error("Failed to initialize microphone: " + e.getMessage());
+            log.error("DJ Light effects will be audio-independent");
             audioInitialized = false;
         }
     }

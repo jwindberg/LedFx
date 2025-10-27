@@ -42,9 +42,9 @@ public class CloudsAnimation implements LedAnimation {
         // Create cloud image buffer
         this.cloudImage = new BufferedImage(CLOUD_WIDTH, CLOUD_HEIGHT, BufferedImage.TYPE_INT_RGB);
         
-        System.out.println("Clouds Animation initialized");
-        System.out.println("Animation: " + getName());
-        System.out.println("Description: " + getDescription());
+        log.debug("Clouds Animation initialized");
+        log.debug("Animation: " + getName());
+        log.debug("Description: " + getDescription());
     }
 
     @Override

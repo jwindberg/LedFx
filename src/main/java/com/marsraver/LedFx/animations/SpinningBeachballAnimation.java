@@ -2,13 +2,16 @@ package com.marsraver.LedFx.animations;
 
 import com.marsraver.LedFx.LedGrid;
 import com.marsraver.LedFx.LedAnimation;
+import lombok.extern.log4j.Log4j2;
+
 import java.awt.*;
 import java.awt.geom.Arc2D;
+import java.awt.image.BufferedImage;
 
 /**
- * Spinning beachball animation that fills 90% of the LED grid height.
- * Creates a colorful spinning ball with alternating colored segments.
+ * Spinning beachball animation with rainbow colored segments.
  */
+@Log4j2
 public class SpinningBeachballAnimation implements LedAnimation {
     
     private LedGrid ledGrid;
@@ -16,14 +19,14 @@ public class SpinningBeachballAnimation implements LedAnimation {
     private float rotation = 0;
     private int windowWidth, windowHeight;
     
-    // Beachball colors (bright, vibrant colors)
+    // Beachball colors (six bright, vibrant colors)
     private static final Color[] BEACHBALL_COLORS = {
         new Color(255, 0, 0),     // Red
-        new Color(255, 165, 0),   // Orange
+        new Color(255, 128, 0),   // Orange
         new Color(255, 255, 0),   // Yellow
         new Color(0, 255, 0),     // Green
         new Color(0, 0, 255),     // Blue
-        new Color(128, 0, 128)    // Purple
+        new Color(128, 0, 255)    // Purple
     };
     
     @Override
@@ -33,15 +36,13 @@ public class SpinningBeachballAnimation implements LedAnimation {
         this.windowHeight = height;
         this.lastTime = System.currentTimeMillis();
         
-        System.out.println("Spinning Beachball Animation initialized");
-        System.out.println("Animation: " + getName());
-        System.out.println("Description: " + getDescription());
+        log.debug("Spinning Beachball Animation initialized");
+        log.debug("Animation: " + getName());
+        log.debug("Description: " + getDescription());
     }
     
     @Override
     public void draw(Graphics2D g, int width, int height, LedGrid ledGrid) {
-        System.out.println("DEBUG: SpinningBeachballAnimation.draw() called - size: " + width + "x" + height);
-        
         // Clear the background
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, width, height);
@@ -50,51 +51,42 @@ public class SpinningBeachballAnimation implements LedAnimation {
         long currentTime = System.currentTimeMillis();
         float timeDelta = (currentTime - lastTime) / 1000.0f;
         lastTime = currentTime;
+        rotation -= timeDelta * 90; // 90 degrees per second
+        if (rotation < 0) rotation += 360;
+        
+        // Calculate beachball size
+        int beachballSize = 480;
 
-            rotation += timeDelta * 90; // 90 degrees per second (correct direction)
-        if (rotation > 360) rotation -= 360;
+        // Center the beachball in the LED grid area
+        // Grid01 and Grid02 start at y=45, Grid03 and Grid04 end at y=525 (285+240)
+        // So the visual center is at (45 + 525) / 2 = 285
+        int centerX = width / 2;
+        int centerY = 285;
         
-        // Calculate beachball size - as tall as the LED grid
-        int beachballSize = 240; // Match LED grid height - never change this again
-
-        // Center the beachball in the LED grid area (not the window)
-        // The grids are at (10,80) and (250,80), each 240x240
-        // So the total LED area is from (10,80) to (490,320)
-        int ledAreaCenterX = (10 + 490) / 2; // 250 (middle of LED area)
-        int ledAreaCenterY = (80 + 320) / 2; // 200 (middle of LED area)
+        // Draw the spinning beachball
+        drawBeachball(g, centerX, centerY, beachballSize, rotation);
         
-        int centerX = ledAreaCenterX;
-        int centerY = ledAreaCenterY; // Back to original position
-        
-        // Draw the spinning beachball FIRST
-        drawSpinningBeachball(g, centerX, centerY, beachballSize, rotation);
-        
-        // NOW sample the colors from what was actually drawn and map to LEDs
-        sampleAndMapToLeds(g, ledGrid, centerX, centerY, beachballSize / 2);
-        
-        // Draw info text
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.PLAIN, 12));
-        g.drawString("Spinning Beachball - Press ESC to exit", 10, 20);
+        // Map to LEDs by sampling the rendered canvas
+        mapToLeds(g, centerX, centerY, beachballSize / 2, width, height);
     }
     
     /**
      * Draws the spinning beachball with colored segments.
      */
-    private void drawSpinningBeachball(Graphics2D g, int centerX, int centerY, int size, float rotation) {
+    private void drawBeachball(Graphics2D g, int centerX, int centerY, int size, float rotation) {
         int radius = size / 2;
-        System.out.println("DEBUG: drawSpinningBeachball - center=(" + centerX + "," + centerY + ") radius=" + radius + " rotation=" + rotation);
         
         // Enable anti-aliasing for smooth edges
         g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         
-        // Draw each colored segment
+        // Draw each colored segment (60 degrees each for 6 segments)
+        int segmentAngle = 360 / BEACHBALL_COLORS.length;
         for (int i = 0; i < BEACHBALL_COLORS.length; i++) {
             g.setColor(BEACHBALL_COLORS[i]);
             
             // Calculate segment angles (60 degrees each for 6 segments)
-            float startAngle = (i * 60) + rotation;
-            float arcAngle = 60;
+            float startAngle = (i * segmentAngle) + rotation;
+            float arcAngle = segmentAngle;
             
             // Draw the arc segment
             Arc2D arc = new Arc2D.Double(
@@ -103,31 +95,43 @@ public class SpinningBeachballAnimation implements LedAnimation {
             );
             g.fill(arc);
         }
-        
-        // Draw a subtle outline
-        g.setColor(new Color(255, 255, 255, 100));
-        g.setStroke(new BasicStroke(2));
-        g.drawOval(centerX - radius, centerY - radius, size, size);
     }
     
     /**
-     * Samples colors from the rendered graphics and maps them to LEDs.
-     * This ensures perfect synchronization between what's drawn and what's sent to LEDs.
+     * Maps the beachball to LEDs by sampling the rendered Graphics2D output.
      */
-    private void sampleAndMapToLeds(Graphics2D g, LedGrid ledGrid, int centerX, int centerY, int radius) {
-        // Directly calculate beachball colors for each LED position
-        for (int gridIndex = 0; gridIndex < ledGrid.getGridCount(); gridIndex++) {
+    private void mapToLeds(Graphics2D g, int centerX, int centerY, int radius, int width, int height) {
+        int gridSize = ledGrid.getGridSize();
+        int pixelSize = ledGrid.getPixelSize();
+        int gridCount = ledGrid.getGridCount();
+        
+        // Clear all grids
+        for (int i = 0; i < gridCount; i++) {
+            ledGrid.clearGrid(i);
+        }
+        
+        // Create a BufferedImage to sample from the current Graphics2D output
+        BufferedImage canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        Graphics2D canvasG = canvas.createGraphics();
+        
+        // Draw the beachball to the BufferedImage (same as what's shown on screen)
+        canvasG.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        canvasG.setColor(Color.BLACK);
+        canvasG.fillRect(0, 0, width, height);
+        drawBeachball(canvasG, centerX, centerY, radius * 2, rotation);
+        canvasG.dispose();
+        
+        // For each grid, check each LED position
+        // We iterate y then x and swap the coordinates when calling setLedColor
+        // to match the serpentine LED layout (as done in TestAnimation)
+        for (int gridIndex = 0; gridIndex < gridCount; gridIndex++) {
             var gridConfig = ledGrid.getGridConfig(gridIndex);
-            for (int y = 0; y < ledGrid.getGridSize(); y++) {
-                for (int x = 0; x < ledGrid.getGridSize(); x++) {
-                    // Transform LED coordinates to match physical LED arrangement
-                    // For 90-degree clockwise rotation only: (x,y) -> (y, x)
-                    int transformedX = y;
-                    int transformedY = x;
-                    
-                    // Map transformed LED coordinates to window coordinates for this grid
-                    int windowX = gridConfig.getX() + transformedX * ledGrid.getPixelSize() + ledGrid.getPixelSize() / 2;
-                    int windowY = gridConfig.getY() + transformedY * ledGrid.getPixelSize() + ledGrid.getPixelSize() / 2;
+            
+            for (int y = 0; y < gridSize; y++) {
+                for (int x = 0; x < gridSize; x++) {
+                    // Map LED coordinates to window coordinates
+                    int windowX = gridConfig.getX() + x * pixelSize + pixelSize / 2;
+                    int windowY = gridConfig.getY() + y * pixelSize + pixelSize / 2;
                     
                     // Calculate distance from beachball center
                     int dx = windowX - centerX;
@@ -136,86 +140,19 @@ public class SpinningBeachballAnimation implements LedAnimation {
                     
                     // Check if LED is within the beachball
                     if (distance <= radius) {
-                        // Calculate which color segment this LED belongs to
-                        // Try without any angle adjustment first
-                        double angle = Math.toDegrees(Math.atan2(dy, dx)) + rotation;
-                        while (angle < 0) angle += 360;
-                        while (angle >= 360) angle -= 360;
+                        // Sample the color from the rendered canvas at this position
+                        int rgb = canvas.getRGB(windowX, windowY);
+                        Color color = new Color(rgb);
                         
-                        int segmentIndex = (int)(angle / 60) % BEACHBALL_COLORS.length;
-                        Color color = BEACHBALL_COLORS[segmentIndex];
-                        
-                        // Set LED with the calculated color
-                        ledGrid.setLedColor(gridIndex, x, y, color);
+                        // Display all colors without filter
+                        ledGrid.setLedColor(gridIndex, y, x, color);
                     }
                 }
             }
         }
-    }
-    
-    /**
-     * Samples the color from the rendered graphics at the given window coordinates.
-     * This ensures the LED colors exactly match what's actually drawn on screen.
-     */
-    private Color sampleColorFromGraphics(Graphics2D g, int windowX, int windowY, int centerX, int centerY, int radius) {
-        // Calculate distance from center
-        int dx = windowX - centerX;
-        int dy = windowY - centerY;
-        double distance = Math.sqrt(dx * dx + dy * dy);
         
-        // Debug: Show what we're checking
-        if (windowX == centerX && windowY == centerY) {
-            System.out.println("Beachball center: (" + centerX + "," + centerY + ") radius: " + radius);
-        }
-        
-        // Check if point is within the beachball
-        if (distance <= radius) {
-            // Calculate which color segment this point belongs to
-            double angle = Math.toDegrees(Math.atan2(dy, dx)) + rotation;
-            while (angle < 0) angle += 360;
-            while (angle >= 360) angle -= 360;
-            
-            int segmentIndex = (int)(angle / 60) % BEACHBALL_COLORS.length;
-            Color color = BEACHBALL_COLORS[segmentIndex];
-            
-            // Debug: Show first few colors found
-            if (windowX < centerX + 50 && windowY < centerY + 50) {
-                System.out.println("Beachball color at (" + windowX + "," + windowY + "): R=" + color.getRed() + " G=" + color.getGreen() + " B=" + color.getBlue());
-            }
-            
-            return color;
-        }
-        
-        return null; // Outside the beachball
-    }
-    
-    /**
-     * Adds a glow effect around a position.
-     */
-    private void addGlowEffect(int ledX, int ledY, Color color, boolean isLeftGrid, int glowRadius) {
-        for (int dy = -glowRadius; dy <= glowRadius; dy++) {
-            for (int dx = -glowRadius; dx <= glowRadius; dx++) {
-                int glowX = ledX + dx;
-                int glowY = ledY + dy;
-                
-                if (glowX >= 0 && glowX < ledGrid.getGridSize() && 
-                    glowY >= 0 && glowY < ledGrid.getGridSize()) {
-                    
-                    double distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance <= glowRadius && distance > 0) {
-                        float intensity = 1.0f - (float)(distance / glowRadius);
-                        Color glowColor = new Color(
-                            (int)(color.getRed() * intensity),
-                            (int)(color.getGreen() * intensity),
-                            (int)(color.getBlue() * intensity)
-                        );
-                        
-                        // Simplified glow effect - just set the main LED color
-                        // TODO: Implement unified glow effect for all grids
-                    }
-                }
-            }
-        }
+        // Send to devices
+        ledGrid.sendToDevices();
     }
     
     @Override
@@ -225,6 +162,9 @@ public class SpinningBeachballAnimation implements LedAnimation {
     
     @Override
     public String getDescription() {
-        return "A colorful spinning beachball that fills 90% of the LED grid height with 6 colored segments";
+        return "A colorful spinning beachball with 6 colored segments";
     }
 }
+
+
+

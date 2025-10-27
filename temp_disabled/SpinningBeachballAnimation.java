@@ -33,9 +33,9 @@ public class SpinningBeachballAnimation implements LedAnimation {
         this.windowHeight = height;
         this.lastTime = System.currentTimeMillis();
         
-        System.out.println("Spinning Beachball Animation initialized");
-        System.out.println("Animation: " + getName());
-        System.out.println("Description: " + getDescription());
+        log.debug("Spinning Beachball Animation initialized");
+        log.debug("Animation: " + getName());
+        log.debug("Description: " + getDescription());
     }
     
     @Override
@@ -147,7 +147,7 @@ public class SpinningBeachballAnimation implements LedAnimation {
             }
         }
         
-        System.out.println("Beachball colors sampled from rendered graphics and mapped to LED grid");
+        log.debug("Beachball colors sampled from rendered graphics and mapped to LED grid");
     }
     
     /**

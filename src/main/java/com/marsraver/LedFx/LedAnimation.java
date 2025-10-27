@@ -43,5 +43,14 @@ public interface LedAnimation {
      * @return The animation description
      */
     String getDescription();
+    
+    /**
+     * Stops the animation and performs any necessary cleanup.
+     * Called when switching animations or closing the application.
+     */
+    default void stop() {
+        // Default implementation does nothing
+        // Animations can override this to perform cleanup
+    }
 }
 

@@ -2,6 +2,7 @@ package com.marsraver.LedFx.animations;
 
 import com.marsraver.LedFx.LedGrid;
 import com.marsraver.LedFx.LedAnimation;
+import lombok.extern.log4j.Log4j2;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -10,6 +11,7 @@ import java.awt.image.BufferedImage;
  * Clouds animation that creates a cloud-like effect using Perlin noise.
  * Features color cycling and smooth, organic movement patterns.
  */
+@Log4j2
 public class CloudsAnimation implements LedAnimation {
 
     private LedGrid ledGrid;
@@ -42,9 +44,9 @@ public class CloudsAnimation implements LedAnimation {
         // Create cloud image buffer
         this.cloudImage = new BufferedImage(CLOUD_WIDTH, CLOUD_HEIGHT, BufferedImage.TYPE_INT_RGB);
         
-        System.out.println("Clouds Animation initialized");
-        System.out.println("Animation: " + getName());
-        System.out.println("Description: " + getDescription());
+        log.debug("Clouds Animation initialized");
+        log.debug("Animation: " + getName());
+        log.debug("Description: " + getDescription());
     }
 
     @Override
@@ -91,8 +93,8 @@ public class CloudsAnimation implements LedAnimation {
                 float cloudThreshold = 0.3f; // Adjust this to control cloud density
                 float cloudValue = Math.max(0, (noiseValue - cloudThreshold) / (1.0f - cloudThreshold));
                 
-                // Convert to brightness with better cloud shape
-                float brightness = cloudValue * 80.0f + 20.0f; // Range 20-100
+                // Convert to brightness with better cloud shape (darker base)
+                float brightness = cloudValue * 50.0f + 5.0f; // Range 5-55 (much darker)
                 brightness = Math.max(0, Math.min(100, brightness)); // Clamp to 0-100
                 
                 // Calculate saturation (higher for brighter areas)

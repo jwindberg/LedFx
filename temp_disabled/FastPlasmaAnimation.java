@@ -44,9 +44,9 @@ public class FastPlasmaAnimation implements LedAnimation {
         initializePalette();
         initializePlasmaLookup();
         
-        System.out.println("Fast Plasma Animation initialized");
-        System.out.println("Animation: " + getName());
-        System.out.println("Description: " + getDescription());
+        log.debug("Fast Plasma Animation initialized");
+        log.debug("Animation: " + getName());
+        log.debug("Description: " + getDescription());
     }
     
     /**

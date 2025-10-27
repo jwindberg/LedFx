@@ -1,5 +1,7 @@
 package com.marsraver.LedFx.layout;
 
+import com.marsraver.LedFx.wled.ColorMapping;
+import lombok.extern.log4j.Log4j2;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -14,6 +16,7 @@ import java.util.List;
  * Loads layout configurations from XML files.
  * Parses XML files in the resources/layouts directory.
  */
+@Log4j2
 public class LayoutLoader {
     
     private static final String LAYOUTS_PATH = "/layouts/";
@@ -89,6 +92,18 @@ public class LayoutLoader {
         grid.setGridSize(getIntAttribute(gridElement, "gridSize", 16));
         grid.setPixelSize(getIntAttribute(gridElement, "pixelSize", 15));
         
+        // Parse colorMapping attribute
+        String colorMappingStr = getAttributeValue(gridElement, "colorMapping", "");
+        if (!colorMappingStr.isEmpty()) {
+            try {
+                ColorMapping colorMapping = ColorMapping.valueOf(colorMappingStr.toUpperCase());
+                grid.setColorMapping(colorMapping);
+            } catch (IllegalArgumentException e) {
+                log.error("Invalid colorMapping '" + colorMappingStr + "' for grid '" + 
+                                 grid.getId() + "', using default GBR");
+            }
+        }
+        
         return grid;
     }
     
@@ -108,7 +123,7 @@ public class LayoutLoader {
         try {
             return value.isEmpty() ? defaultValue : Integer.parseInt(value);
         } catch (NumberFormatException e) {
-            System.err.println("Invalid integer value for attribute '" + attributeName + "': " + value);
+            log.error("Invalid integer value for attribute '" + attributeName + "': " + value);
             return defaultValue;
         }
     }

@@ -127,7 +127,7 @@ public class LayoutSketchRunner {
         
         animation = AnimationFactory.createAnimation(animationType);
         if (animation == null) {
-            System.err.println("Failed to create animation: " + animationType);
+            log.error("Failed to create animation: " + animationType);
             return;
         }
         
@@ -145,7 +145,7 @@ public class LayoutSketchRunner {
         }
         
         animationTimer.start();
-        System.out.println("Switched to animation: " + animation.getName());
+        log.debug("Switched to animation: " + animation.getName());
     }
     
     private void startAnimation() {
@@ -171,7 +171,7 @@ public class LayoutSketchRunner {
         layoutLedGrid.clearAllLeds();
         layoutLedGrid.sendToDevices();
         layoutLedGrid.turnOffAllDevices();
-        System.out.println("LEDs cleared and devices turned off");
+        log.debug("LEDs cleared and devices turned off");
     }
     
     /**

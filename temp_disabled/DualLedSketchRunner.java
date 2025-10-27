@@ -111,7 +111,7 @@ public class DualLedSketchRunner {
         leftController.turnOff();
         rightController.turnOff();
         
-        System.out.println("LEDs cleared and devices turned off");
+        log.debug("LEDs cleared and devices turned off");
     }
     
     /**

@@ -2,6 +2,7 @@ package com.marsraver.LedFx.wled;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import lombok.extern.log4j.Log4j2;
 
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -12,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Controller for sending LED data to a WLED device.
  * Handles communication with the WLED REST API.
  */
+@Log4j2
 public class WledController {
     
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -95,7 +97,7 @@ public class WledController {
             return responseCode == 200;
             
         } catch (Exception e) {
-            System.err.println("Error sending LED data to " + deviceIp + ": " + e.getMessage());
+            log.error("Error sending LED data to " + deviceIp + ": " + e.getMessage());
             return false;
         }
     }
@@ -154,7 +156,7 @@ public class WledController {
             return responseCode == 200;
             
         } catch (Exception e) {
-            System.err.println("Error sending LED data to " + deviceIp + ": " + e.getMessage());
+            log.error("Error sending LED data to " + deviceIp + ": " + e.getMessage());
             return false;
         }
     }
@@ -185,7 +187,7 @@ public class WledController {
             return responseCode == 200;
             
         } catch (Exception e) {
-            System.err.println("Error turning off WLED device: " + e.getMessage());
+            log.error("Error turning off WLED device: " + e.getMessage());
             return false;
         }
     }

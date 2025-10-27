@@ -3,6 +3,10 @@ package com.marsraver.LedFx;
 import com.marsraver.LedFx.layout.LayoutConfig;
 import com.marsraver.LedFx.layout.GridConfig;
 import com.marsraver.LedFx.wled.WledController;
+import com.marsraver.LedFx.wled.WledArtNetController;
+import com.marsraver.LedFx.wled.ColorMapping;
+import lombok.extern.log4j.Log4j2;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,11 +15,14 @@ import java.util.List;
  * Unified LED grid that manages multiple LED grids based on layout configuration.
  * This replaces the old SingleLedGrid and DualLedGrid classes with a flexible system
  * that can handle any number of grids positioned anywhere in the window.
+ * 
+ * Now uses Art-Net UDP protocol for much faster LED updates (120+ FPS).
  */
+@Log4j2
 public class LedGrid {
     
     private final LayoutConfig layout;
-    private final List<WledController> controllers;
+    private final List<WledArtNetController> controllers; // Changed to Art-Net controllers
     private final List<Color[][]> ledColors; // [gridIndex][x][y]
     private final List<GridConfig> grids;
     
@@ -25,10 +32,16 @@ public class LedGrid {
         this.controllers = new ArrayList<>();
         this.ledColors = new ArrayList<>();
         
-        // Initialize controllers and LED color arrays for each grid
+        // Initialize Art-Net controllers and LED color arrays for each grid
         for (int i = 0; i < grids.size(); i++) {
             GridConfig grid = grids.get(i);
-            controllers.add(new WledController(grid.getDeviceIp(), grid.getLedCount()));
+            // Use Art-Net controller with universe number based on grid index
+            // Use the color mapping from GridConfig, or default to GBR if not specified
+            ColorMapping colorMapping = grid.getColorMapping();
+            if (colorMapping == null) {
+                colorMapping = ColorMapping.GBR;
+            }
+            controllers.add(new WledArtNetController(grid.getDeviceIp(), grid.getLedCount(), i, colorMapping));
             
             // Initialize LED color array for this grid
             Color[][] gridColors = new Color[grid.getGridSize()][grid.getGridSize()];
@@ -38,15 +51,16 @@ public class LedGrid {
             clearGrid(i);
         }
         
-        System.out.println("Unified LED Grid initialized:");
-        System.out.println("  Layout: " + layout.getName());
-        System.out.println("  Window: " + layout.getWindowWidth() + "x" + layout.getWindowHeight());
-        System.out.println("  Grids: " + grids.size());
+        log.debug("Unified LED Grid initialized with Art-Net:");
+        log.debug("  Layout: " + layout.getName());
+        log.debug("  Window: " + layout.getWindowWidth() + "x" + layout.getWindowHeight());
+        log.debug("  Grids: " + grids.size());
         for (int i = 0; i < grids.size(); i++) {
             GridConfig grid = grids.get(i);
-            System.out.println("    Grid " + (i + 1) + " (" + grid.getId() + "): " + 
+            log.debug("    Grid " + (i + 1) + " (" + grid.getId() + "): " + 
                              grid.getGridSize() + "x" + grid.getGridSize() + 
-                             " at (" + grid.getX() + ", " + grid.getY() + ") -> " + grid.getDeviceIp());
+                             " at (" + grid.getX() + ", " + grid.getY() + ") -> " + grid.getDeviceIp() +
+                             " (Universe " + i + ")");
         }
     }
     
@@ -133,26 +147,29 @@ public class LedGrid {
         boolean allSuccess = true;
         for (int i = 0; i < grids.size(); i++) {
             GridConfig grid = grids.get(i);
-            WledController controller = controllers.get(i);
+            WledArtNetController controller = controllers.get(i);
             Color[][] gridColors = ledColors.get(i);
             
             // Convert Color[][] to int[] for WLED controller
             // Use column-by-column layout (top to bottom, left to right)
             int[] ledData = new int[grid.getGridSize() * grid.getGridSize() * 3];
+            // Initialize all values to 0 to prevent artifacts from uninitialized data
+            java.util.Arrays.fill(ledData, 0);
             int index = 0;
             for (int x = 0; x < grid.getGridSize(); x++) {
                 for (int y = 0; y < grid.getGridSize(); y++) {
                     Color color = gridColors[x][y];
                     if (color == null) color = Color.BLACK;
-                    ledData[index++] = color.getRed();
-                    ledData[index++] = color.getGreen();
-                    ledData[index++] = color.getBlue();
+                    // Clamp color values to valid 0-255 range to prevent edge artifacts
+                    ledData[index++] = Math.min(255, Math.max(0, color.getRed()));
+                    ledData[index++] = Math.min(255, Math.max(0, color.getGreen()));
+                    ledData[index++] = Math.min(255, Math.max(0, color.getBlue()));
                 }
             }
             
             boolean success = controller.sendLedData(ledData);
             if (!success) {
-                System.err.println("Failed to send LED data to " + grid.getDeviceIp());
+                log.error("Failed to send LED data to " + grid.getDeviceIp() + " (Universe " + i + ")");
                 allSuccess = false;
             }
         }
@@ -260,9 +277,9 @@ public class LedGrid {
      * Gets the controller for a specific grid.
      * 
      * @param gridIndex The index of the grid
-     * @return The WLED controller
+     * @return The WLED Art-Net controller
      */
-    public WledController getController(int gridIndex) {
+    public WledArtNetController getController(int gridIndex) {
         if (gridIndex >= 0 && gridIndex < controllers.size()) {
             return controllers.get(gridIndex);
         }
@@ -273,9 +290,9 @@ public class LedGrid {
      * Gets the controller for a grid by ID.
      * 
      * @param gridId The ID of the grid
-     * @return The WLED controller
+     * @return The WLED Art-Net controller
      */
-    public WledController getController(String gridId) {
+    public WledArtNetController getController(String gridId) {
         GridConfig grid = layout.getGridById(gridId);
         if (grid != null) {
             int gridIndex = grids.indexOf(grid);

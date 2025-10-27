@@ -2,25 +2,30 @@ package com.marsraver.LedFx.animations;
 
 import com.marsraver.LedFx.LedGrid;
 import com.marsraver.LedFx.LedAnimation;
+import lombok.extern.log4j.Log4j2;
+
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
+import java.util.Random;
 
 /**
  * Bouncing ball animation for the LED framework.
  * Creates a single ball that bounces around the window with color cycling.
  */
+@Log4j2
 public class BouncingBallAnimation implements LedAnimation {
     
     // Ball properties
     private int ballX, ballY;
     private int ballSize = 25; // Increased size for better visibility
-    private int velocityX = 15, velocityY = 15; // Fast movement
+    private int velocityX = 5, velocityY = 5; // Slower movement for better visualization
     private Color ballColor;
     
     private LedGrid ledGrid;
     private long lastTime;
     private float hue = 0;
     private int windowWidth, windowHeight;
+    private Random random;
     
     @Override
     public void init(int width, int height, LedGrid ledGrid) {
@@ -36,9 +41,12 @@ public class BouncingBallAnimation implements LedAnimation {
         ballColor = new Color(100, 150, 255);
         lastTime = System.currentTimeMillis();
         
-        System.out.println("Bouncing Ball Animation initialized");
-        System.out.println("Animation: " + getName());
-        System.out.println("Description: " + getDescription());
+        // Initialize random number generator for path variation
+        random = new Random();
+        
+        log.debug("Bouncing Ball Animation initialized");
+        log.debug("Animation: " + getName());
+        log.debug("Description: " + getDescription());
     }
     
     @Override
@@ -67,12 +75,33 @@ public class BouncingBallAnimation implements LedAnimation {
         ballX += velocityX;
         ballY += velocityY;
         
-        // Bounce off window edges
-        if (ballX <= ballSize/2 || ballX >= windowWidth - ballSize/2) {
+        boolean hitX = ballX <= ballSize/2 || ballX >= windowWidth - ballSize/2;
+        boolean hitY = ballY <= ballSize/2 || ballY >= windowHeight - ballSize/2;
+        
+        // Handle corner bounces properly
+        if (hitX && hitY) {
+            // Hit corner - reverse both directions
             velocityX = -velocityX;
-        }
-        if (ballY <= ballSize/2 || ballY >= windowHeight - ballSize/2) {
             velocityY = -velocityY;
+        } else if (hitX) {
+            // Hit vertical wall
+            velocityX = -velocityX;
+        } else if (hitY) {
+            // Hit horizontal wall
+            velocityY = -velocityY;
+        }
+        
+        // Add random noise to velocity if we hit a wall
+        if (hitX || hitY) {
+            // Add random noise to velocity (-2 to +2)
+            velocityX += random.nextInt(5) - 2;
+            velocityY += random.nextInt(5) - 2;
+            // Ensure minimum speed to prevent getting stuck
+            if (velocityX == 0) velocityX = random.nextBoolean() ? 3 : -3;
+            if (velocityY == 0) velocityY = random.nextBoolean() ? 3 : -3;
+            // Keep velocity within reasonable bounds
+            velocityX = Math.max(-10, Math.min(10, velocityX));
+            velocityY = Math.max(-10, Math.min(10, velocityY));
         }
         
         // Keep ball within window bounds
@@ -114,13 +143,23 @@ public class BouncingBallAnimation implements LedAnimation {
         // Clear all LEDs first
         ledGrid.clearAllLeds();
         
+        // Debug: Check if ball is in window bounds
+        if (ballX < 0 || ballX >= windowWidth || ballY < 0 || ballY >= windowHeight) {
+            // Ball is out of bounds, don't update LEDs
+            return;
+        }
+        
         // Pre-compute dimmed color for glow effect
         int glowR = ballColor.getRed() / 2;
         int glowG = ballColor.getGreen() / 2;
         int glowB = ballColor.getBlue() / 2;
         Color glowColor = new Color(glowR, glowG, glowB);
         
-        // Create a simple bouncing ball pattern that works across both grids
+        // Find which grid contains the ball
+        int targetGridIndex = -1;
+        int ledX = -1;
+        int ledY = -1;
+        
         for (int gridIndex = 0; gridIndex < gridCount; gridIndex++) {
             var gridConfig = ledGrid.getGridConfig(gridIndex);
             
@@ -129,32 +168,35 @@ public class BouncingBallAnimation implements LedAnimation {
             int ballY_relative = ballY - gridConfig.getY();
             
             // Map to LED coordinates
-            int ledX = ballX_relative / pixelSize;
-            int ledY = ballY_relative / pixelSize;
+            int gridLedX = ballX_relative / pixelSize;
+            int gridLedY = ballY_relative / pixelSize;
             
             // Check if ball is within this grid
-            if (ledX >= 0 && ledX < gridSize && ledY >= 0 && ledY < gridSize) {
-                // Transform LED coordinates to match physical LED arrangement
-                // For 90-degree clockwise rotation: (x,y) -> (y, x)
-                int transformedX = ledY;
-                int transformedY = ledX;
-                
-                // Set the LED at the transformed ball position
-                ledGrid.setLedColor(gridIndex, transformedX, transformedY, ballColor);
-                
-                // Add a small glow effect (optimized to use pre-computed color)
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dx = -1; dx <= 1; dx++) {
-                        int glowX = ledX + dx;
-                        int glowY = ledY + dy;
-                        
-                        if (glowX >= 0 && glowX < gridSize && glowY >= 0 && glowY < gridSize) {
-                            // Transform glow coordinates to match physical LED arrangement
-                            int transformedGlowX = glowY;
-                            int transformedGlowY = glowX;
-                            
-                            ledGrid.setLedColor(gridIndex, transformedGlowX, transformedGlowY, glowColor);
-                        }
+            if (gridLedX >= 0 && gridLedX < gridSize && gridLedY >= 0 && gridLedY < gridSize) {
+                targetGridIndex = gridIndex;
+                ledX = gridLedX;
+                ledY = gridLedY;
+                break; // Found the grid, stop searching
+            }
+        }
+        
+        // Only draw if we found a valid grid
+        if (targetGridIndex >= 0) {
+            // Set the LED at the ball position (no transformation needed)
+            ledGrid.setLedColor(targetGridIndex, ledX, ledY, ballColor);
+            
+            // Add a small glow effect (optimized to use pre-computed color)
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dx = -1; dx <= 1; dx++) {
+                    // Skip the center (already set to ball color)
+                    if (dx == 0 && dy == 0) continue;
+                    
+                    int glowX = ledX + dx;
+                    int glowY = ledY + dy;
+                    
+                    // Check bounds for glow effect
+                    if (glowX >= 0 && glowX < gridSize && glowY >= 0 && glowY < gridSize) {
+                        ledGrid.setLedColor(targetGridIndex, glowX, glowY, glowColor);
                     }
                 }
             }
@@ -179,9 +221,9 @@ public class BouncingBallAnimation implements LedAnimation {
                     if (distance <= glowRadius) {
                         float intensity = 1.0f - (float)(distance / glowRadius) * 0.5f; // Reduced intensity falloff
                         Color glowColor = new Color(
-                            (int)(ballColor.getRed() * intensity),
-                            (int)(ballColor.getGreen() * intensity),
-                            (int)(ballColor.getBlue() * intensity)
+                            Math.min(255, Math.max(0, (int)(ballColor.getRed() * intensity))),
+                            Math.min(255, Math.max(0, (int)(ballColor.getGreen() * intensity))),
+                            Math.min(255, Math.max(0, (int)(ballColor.getBlue() * intensity)))
                         );
                         
                         ledGrid.setLedColor(gridIndex, glowX, glowY, glowColor);

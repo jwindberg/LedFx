@@ -2,6 +2,7 @@ package com.marsraver.LedFx.wled;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.log4j.Log4j2;
 
 import java.awt.*;
 import java.io.InputStream;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
+@Log4j2
 public class WledColorRotator {
 
     private final List<WledDevice> devices;
@@ -30,12 +32,12 @@ public class WledColorRotator {
         running = true;
 
         // Print discovered device info
-        System.out.println("\n✅ Found " + devices.size() + " WLED device(s):");
+        log.debug("\n✅ Found " + devices.size() + " WLED device(s):");
         for (var dev : devices) {
             System.out.printf(dev.toString());
         }
 
-        System.out.println("\n🔍 Checking current power states...");
+        log.debug("\n🔍 Checking current power states...");
         updatePowerStates(true); // initial check with printout
 
         // Schedule power-state refreshes every 10 seconds
@@ -57,13 +59,13 @@ public class WledColorRotator {
 
         }, 0, intervalMillis, TimeUnit.MILLISECONDS);
 
-        System.out.println("🎨 Started color rotation across " + devices.size() + " devices (power-aware).");
+        log.debug("🎨 Started color rotation across " + devices.size() + " devices (power-aware).");
     }
 
     public void stop() {
         running = false;
         scheduler.shutdownNow();
-        System.out.println("🛑 Stopped color rotation.");
+        log.debug("🛑 Stopped color rotation.");
     }
 
     private void updatePowerStates(boolean initial) {
@@ -121,17 +123,17 @@ public class WledColorRotator {
             conn.getResponseCode();
             conn.disconnect();
         } catch (Exception e) {
-            System.err.println("⚠️ Failed to update " + dev.ip + ": " + e.getMessage());
+            log.error("⚠️ Failed to update " + dev.ip + ": " + e.getMessage());
         }
     }
 
     // Example usage
     public static void main(String[] args) throws Exception {
-        System.out.println("🔍 Discovering WLED devices...");
+        log.debug("🔍 Discovering WLED devices...");
         var devices = WledNetworkScanner.discover();
 
         if (devices.isEmpty()) {
-            System.out.println("No WLED devices found.");
+            log.debug("No WLED devices found.");
             return;
         }
 
