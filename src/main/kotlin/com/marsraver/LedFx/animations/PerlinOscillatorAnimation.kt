@@ -157,7 +157,7 @@ class PerlinOscillatorAnimation : LedAnimation {
 
         if (closest != null) {
             // Check if the point is within the oscillator's current size
-            val currentSize = closest.getCurrentSize(noiseX, noiseY)
+            val currentSize = closest.getCurrentSize()
             if (minDist <= currentSize / 2) {
                 return closest.currentColor
             }
@@ -232,7 +232,7 @@ class PerlinOscillatorAnimation : LedAnimation {
         /**
          * Gets the current size of the oscillator.
          */
-        fun getCurrentSize(noiseX: Float, noiseY: Float): Float {
+        fun getCurrentSize(): Float {
             return map(sin(rad.toDouble()).toFloat(), -1f, 1f, 10f, 24f)
         }
 

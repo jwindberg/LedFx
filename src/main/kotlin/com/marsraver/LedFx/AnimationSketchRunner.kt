@@ -96,7 +96,7 @@ class AnimationSketchRunner(initialAnimationType: AnimationType, layoutName: Str
 
         animationSelector = JComboBox(AnimationType.entries.toTypedArray())
         animationSelector!!.setBackground(Color.WHITE)
-        animationSelector!!.addActionListener(ActionListener { e: ActionEvent? -> this.onAnimationChanged(e) })
+        animationSelector!!.addActionListener { this.onAnimationChanged(null) }
         topPanel.add(animationSelector)
 
         mainPanel.add(topPanel, BorderLayout.NORTH)
@@ -110,14 +110,14 @@ class AnimationSketchRunner(initialAnimationType: AnimationType, layoutName: Str
      * Sets up the animation selector with the initial animation type.
      */
     private fun setupAnimationSelector(initialAnimationType: AnimationType) {
-        animationSelector!!.setSelectedItem(initialAnimationType)
+        animationSelector!!.selectedItem = initialAnimationType
         switchToAnimation(initialAnimationType)
     }
 
     /**
      * Handles animation selection changes.
      */
-    private fun onAnimationChanged(e: ActionEvent?) {
+    private fun onAnimationChanged(@Suppress("UNUSED_PARAMETER") e: ActionEvent?) {
         val selectedType = animationSelector!!.selectedItem as? AnimationType ?: return
         switchToAnimation(selectedType)
     }
@@ -127,15 +127,11 @@ class AnimationSketchRunner(initialAnimationType: AnimationType, layoutName: Str
      */
     private fun switchToAnimation(animationType: AnimationType) {
         // Stop current animation timer
-        if (animationTimer != null && animationTimer!!.isRunning()) {
-            animationTimer!!.stop()
-        }
+        animationTimer?.stop()
 
 
         // Stop the current animation if it exists
-        if (animation != null) {
-            animation!!.stop()
-        }
+        animation?.stop()
 
 
         // Create new animation
@@ -164,11 +160,7 @@ class AnimationSketchRunner(initialAnimationType: AnimationType, layoutName: Str
      */
     private fun restartAnimationTimer() {
         if (animationTimer == null) {
-            animationTimer = Timer(FRAME_DELAY, object : ActionListener {
-                override fun actionPerformed(e: ActionEvent?) {
-                    canvas!!.repaint()
-                }
-            })
+            animationTimer = Timer(FRAME_DELAY) { canvas!!.repaint() }
         }
         animationTimer!!.start()
     }
@@ -185,7 +177,7 @@ class AnimationSketchRunner(initialAnimationType: AnimationType, layoutName: Str
      * Starts the animation.
      */
     fun start() {
-        if (animationTimer != null && !animationTimer!!.isRunning()) {
+        if (animationTimer?.isRunning == false) {
             animationTimer!!.start()
         }
     }
@@ -194,15 +186,11 @@ class AnimationSketchRunner(initialAnimationType: AnimationType, layoutName: Str
      * Stops the animation.
      */
     fun stop() {
-        if (animationTimer != null && animationTimer!!.isRunning()) {
-            animationTimer!!.stop()
-        }
+        animationTimer?.stop()
 
 
         // Stop the current animation if it exists
-        if (animation != null) {
-            animation!!.stop()
-        }
+        animation?.stop()
     }
 
 
@@ -237,13 +225,13 @@ class AnimationSketchRunner(initialAnimationType: AnimationType, layoutName: Str
                 fun handleSeekEvent(e: MouseEvent): Boolean {
                     val vp = animation as? VideoPlayerAnimation ?: return false
 
-                    val width = width
-                    val height = height
+                    val canvasWidth = this@AnimationSketchCanvas.width
+                    val canvasHeight = this@AnimationSketchCanvas.height
 
                     // Must match scrollbar geometry used in VideoPlayerAnimation.drawScrollbar
-                    val scrollbarWidth = width - 40
+                    val scrollbarWidth = canvasWidth - 40
                     val scrollbarX = 20
-                    val scrollbarY = height - 40
+                    val scrollbarY = canvasHeight - 40
                     val scrollbarHeight = 15
 
                     val mx = e.x

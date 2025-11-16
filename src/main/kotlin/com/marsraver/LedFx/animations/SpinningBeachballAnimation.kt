@@ -65,7 +65,7 @@ class SpinningBeachballAnimation : LedAnimation {
 
 
         // Map to LEDs by sampling the rendered canvas
-        mapToLeds(g, centerX, centerY, beachballSize / 2, width, height)
+        mapToLeds(centerX, centerY, beachballSize / 2, width, height)
     }
 
     /**
@@ -102,7 +102,7 @@ class SpinningBeachballAnimation : LedAnimation {
     /**
      * Maps the beachball to LEDs by sampling the rendered Graphics2D output.
      */
-    private fun mapToLeds(g: Graphics2D?, centerX: Int, centerY: Int, radius: Int, width: Int, height: Int) {
+    private fun mapToLeds(centerX: Int, centerY: Int, radius: Int, width: Int, height: Int) {
         val gridSize = ledGrid!!.gridSize
         val pixelSize = ledGrid!!.pixelSize
         val gridCount = ledGrid!!.gridCount

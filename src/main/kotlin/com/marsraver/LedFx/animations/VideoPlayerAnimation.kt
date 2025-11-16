@@ -176,7 +176,7 @@ class VideoPlayerAnimation : LedAnimation {
 
 
         // Check if frames already exist
-        val existingFrames = tempDir.listFiles(FilenameFilter { dir: File?, name: String? -> name!!.endsWith(".png") })
+        val existingFrames = tempDir.listFiles(FilenameFilter { _: File?, name: String? -> name!!.endsWith(".png") })
         if (existingFrames != null && existingFrames.size > 0) {
             log.debug("Found {} cached frames. Using cached frames.", existingFrames.size)
             this.frameFiles = existingFrames

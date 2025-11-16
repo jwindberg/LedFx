@@ -73,7 +73,7 @@ class BlurzAnimation : LedAnimation {
 
 
         // Apply blur effect
-        applyBlur(width, height)
+        applyBlur()
 
 
         // Draw blurred result to main graphics
@@ -85,7 +85,7 @@ class BlurzAnimation : LedAnimation {
 
 
         // Map to LEDs
-        mapToLeds(g, width, height, ledGrid)
+        mapToLeds(width, height, ledGrid)
 
 
         // Draw info text
@@ -121,7 +121,7 @@ class BlurzAnimation : LedAnimation {
     /**
      * Applies blur effect using convolution.
      */
-    private fun applyBlur(width: Int, height: Int) {
+    private fun applyBlur() {
         // Create blur kernel (9x9 Gaussian-like blur)
         val matrix = floatArrayOf(
             0.01f, 0.02f, 0.03f, 0.02f, 0.01f,
@@ -178,7 +178,7 @@ class BlurzAnimation : LedAnimation {
     /**
      * Maps the blurz effect to LEDs.
      */
-    private fun mapToLeds(g: Graphics2D?, width: Int, height: Int, ledGrid: LedGrid) {
+    private fun mapToLeds(width: Int, height: Int, ledGrid: LedGrid) {
         val gridSize = ledGrid.gridSize
         val pixelSize = ledGrid.pixelSize
         val gridCount = ledGrid.gridCount

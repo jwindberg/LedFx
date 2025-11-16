@@ -147,7 +147,7 @@ class LedGrid(
             val gridColors = ledColors[gridIndex]
             for (x in 0 until grid.gridSize) {
                 for (y in 0 until grid.gridSize) {
-                    gridColors[x]!![y] = Color.BLACK
+                    gridColors[x][y] = Color.BLACK
                 }
             }
         }
@@ -163,7 +163,7 @@ class LedGrid(
         for (i in grids.indices) {
             val grid = grids[i]
             val controller = controllers[i]
-            val gridColors = ledColors[i]!!
+            val gridColors = ledColors[i]
 
 
             // Convert Color[][] to int[] in the order WLED appears to expect for DDP:
@@ -393,7 +393,7 @@ class LedGrid(
                 for (ledX in 0 until grid.gridSize) {
                     // Sample color from the current graphics color (placeholder behavior)
                     val color = Color(g.color.rgb)
-                    ledColors[gridIndex]!![ledX]!![ledY] = color
+                    ledColors[gridIndex][ledX][ledY] = color
                 }
             }
         }

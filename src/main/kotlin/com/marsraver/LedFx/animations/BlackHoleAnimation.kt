@@ -200,7 +200,7 @@ class BlackHoleAnimation : LedAnimation {
 
 
         // Map to LEDs
-        mapToLeds(g)
+        mapToLeds()
 
 
         // Draw info text
@@ -242,7 +242,7 @@ class BlackHoleAnimation : LedAnimation {
     /**
      * Maps the black hole effect to LEDs by sampling colors at LED positions.
      */
-    private fun mapToLeds(g: Graphics2D?) {
+    private fun mapToLeds() {
         val gridSize = ledGrid!!.gridSize
         val pixelSize = ledGrid!!.pixelSize
         val gridCount = ledGrid!!.gridCount

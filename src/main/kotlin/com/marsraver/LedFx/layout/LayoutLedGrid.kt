@@ -22,13 +22,13 @@ class LayoutLedGrid(
     private val ledColors: Array<Array<Array<Color?>?>?> // [gridIndex][x][y]
 
     init {
-        this.controllers = arrayOfNulls<WledController>(layout.gridCount)
-        this.ledColors = arrayOfNulls<Array<Array<Color?>?>>(layout.gridCount)
+        this.controllers = arrayOfNulls(layout.gridCount)
+        this.ledColors = arrayOfNulls(layout.gridCount)
 
 
         // Initialize controllers and LED color arrays
         for (i in 0 until layout.gridCount) {
-            val grid = layout.grids[i]!!
+            val grid = layout.grids[i]
             controllers[i] = WledController(grid.deviceIp!!, grid.ledCount)
             ledColors[i] = Array<Array<Color?>?>(grid.gridSize) { arrayOfNulls<Color>(grid.gridSize) }
 
@@ -71,15 +71,11 @@ class LayoutLedGrid(
      */
     fun getController(gridId: String?): WledController? {
         val id = gridId ?: return null
-        val grid = layout.getGridById(id)
-        if (grid == null) {
-            return null
-        }
-
+        val grid = layout.getGridById(id) ?: return null
 
         // Find the grid index
         for (i in 0 until layout.gridCount) {
-            if (grid.id == layout.grids[i]!!.id) {
+            if (grid.id == layout.grids[i].id) {
                 return controllers[i]
             }
         }
@@ -100,7 +96,7 @@ class LayoutLedGrid(
      */
     fun drawGrids(g: Graphics2D) {
         for (i in 0 until layout.gridCount) {
-            val grid = layout.grids[i]!!
+            val grid = layout.grids[i]
             drawSingleGrid(g, grid, i)
         }
     }
@@ -108,7 +104,7 @@ class LayoutLedGrid(
     /**
      * Draws a single LED grid with grid lines and LED indicators.
      */
-    private fun drawSingleGrid(g: Graphics2D, grid: GridConfig, gridIndex: Int) {
+    private fun drawSingleGrid(g: Graphics2D, grid: GridConfig, @Suppress("UNUSED_PARAMETER") gridIndex: Int) {
         // Draw grid lines
         g.setColor(Color(255, 255, 255, 100)) // Semi-transparent white
         g.setStroke(BasicStroke(1f))
@@ -166,10 +162,9 @@ class LayoutLedGrid(
         val id = gridId ?: return
         val grid = layout.getGridById(id) ?: return
 
-
         // Find the grid index
         for (i in 0 until layout.gridCount) {
-            if (grid.id == layout.grids[i]!!.id) {
+            if (grid.id == layout.grids[i].id) {
                 setLedColor(i, x, y, color)
                 return
             }
@@ -230,7 +225,7 @@ class LayoutLedGrid(
      */
     fun mapWindowToLed(windowX: Int, windowY: Int): IntArray? {
         for (i in 0 until layout.gridCount) {
-            val grid = layout.grids[i]!!
+            val grid = layout.grids[i]
 
             if (windowX >= grid.x && windowX < grid.x + grid.width && windowY >= grid.y && windowY < grid.y + grid.height) {
                 // Calculate LED coordinates within the grid

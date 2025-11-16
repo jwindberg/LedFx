@@ -183,10 +183,10 @@ class StarfieldAnimation : LedAnimation {
 
 
         // Map to LEDs
-        mapToLeds(g, ledGrid)
+        mapToLeds(ledGrid)
     }
 
-    private fun mapToLeds(g: Graphics2D?, ledGrid: LedGrid) {
+    private fun mapToLeds(ledGrid: LedGrid) {
         val gridCount = ledGrid.gridCount
 
         // Clear all grids so only the current frame's stars remain lit
