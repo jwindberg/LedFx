@@ -2,8 +2,7 @@ package com.marsraver.LedFx;
 
 import com.marsraver.LedFx.layout.LayoutConfig;
 import com.marsraver.LedFx.layout.LayoutLoader;
-import com.marsraver.LedFx.wled.WledController;
-import com.marsraver.LedFx.wled.WledArtNetController;
+import com.marsraver.LedFx.wled.WledDdpClient;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -141,9 +140,10 @@ public class LedSketchRunner {
         
         // Turn off all LED devices when stopping
         for (int i = 0; i < ledGrid.getGridCount(); i++) {
-            WledArtNetController controller = ledGrid.getController(i);
-            if (controller != null) {
-                controller.turnOff();
+            var gridConfig = ledGrid.getGridConfig(i);
+            WledDdpClient controller = ledGrid.getController(i);
+            if (controller != null && gridConfig != null) {
+                controller.turnOff(gridConfig.getGridSize() * gridConfig.getGridSize());
             }
         }
     }
@@ -196,9 +196,9 @@ public class LedSketchRunner {
      * Gets the WLED controller for a specific grid.
      * 
      * @param gridIndex The index of the grid
-     * @return The WLED Art-Net controller
+     * @return The WLED DDP client
      */
-    public WledArtNetController getWledController(int gridIndex) {
+    public WledDdpClient getWledController(int gridIndex) {
         return ledGrid.getController(gridIndex);
     }
     
@@ -206,9 +206,9 @@ public class LedSketchRunner {
      * Gets the WLED controller for a grid by ID.
      * 
      * @param gridId The ID of the grid
-     * @return The WLED Art-Net controller
+     * @return The WLED DDP client
      */
-    public WledArtNetController getWledController(String gridId) {
+    public WledDdpClient getWledController(String gridId) {
         return ledGrid.getController(gridId);
     }
 }

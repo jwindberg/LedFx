@@ -15,7 +15,9 @@ public enum AnimationType {
     FAST_PLASMA("fast-plasma", "Fast Plasma Animation"),
     CLOUDS("clouds", "Clouds Animation"),
     PERLIN_OSCILLATOR("perlin-oscillator", "Perlin Oscillator Animation"),
-    STARFIELD("starfield", "Starfield Animation");
+    STARFIELD("starfield", "Starfield Animation"),
+    BLACK_HOLE("black-hole", "Black Hole Animation"),
+    BLURZ("blurz", "Blurz Animation");
     
     private final String id;
     private final String displayName;
@@ -89,6 +91,8 @@ public enum AnimationType {
                 case CLOUDS -> new CloudsAnimation();
                 case PERLIN_OSCILLATOR -> new PerlinOscillatorAnimation();
                 case STARFIELD -> new StarfieldAnimation();
+                case BLACK_HOLE -> new BlackHoleAnimation();
+                case BLURZ -> new BlurzAnimation();
             };
     }
 }

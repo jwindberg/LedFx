@@ -111,9 +111,10 @@ public class PerlinOscillatorAnimation implements LedAnimation {
                     
                     // Sample color from oscillators at this position
                     Color sampledColor = sampleColorAt(windowX, windowY);
-                    
-                    // Set the LED color (using y, x to match TestAnimation's working pattern)
-                    ledGrid.setLedColor(gridIndex, y, x, sampledColor);
+
+                    // Use standard logical LED coordinates (x = left->right, y = top->bottom)
+                    // so mapping is consistent with other animations and LedGrid packing.
+                    ledGrid.setLedColor(gridIndex, x, y, sampledColor);
                 }
             }
         }

@@ -47,7 +47,6 @@ public class MusicBallAnimation implements LedAnimation {
     private LedGrid ledGrid;
     private int windowWidth, windowHeight;
     private long lastBeatTime;
-    private long lastTime;
     private Random random = new Random();
     private List<Ball> balls = new ArrayList<>();
     private float simulatedAudioLevel = 0f;
@@ -58,7 +57,6 @@ public class MusicBallAnimation implements LedAnimation {
         this.ledGrid = ledGrid;
         this.windowWidth = width;
         this.windowHeight = height;
-        this.lastTime = System.currentTimeMillis();
         this.lastBeatTime = System.currentTimeMillis();
         
         log.debug("Music Ball Animation initialized");
@@ -98,13 +96,12 @@ public class MusicBallAnimation implements LedAnimation {
     private void simulateBeat() {
         long currentTime = System.currentTimeMillis();
         
-        // Simulate audio level
-        simulatedAudioLevel = (float)(0.3f + 0.3f * Math.sin(currentTime / 200.0));
+        // Simulate audio level (increase amplitude and speed a bit for more activity)
+        simulatedAudioLevel = (float)(0.5f + 0.5f * Math.sin(currentTime / 180.0));
         
         // Reduce cooldown
         if (beatCooldown > 0) beatCooldown--;
         
-        lastTime = currentTime;
     }
     
     /**
@@ -113,10 +110,10 @@ public class MusicBallAnimation implements LedAnimation {
     private void spawnBallsOnBeat() {
         long currentTime = System.currentTimeMillis();
         
-        // Simulate beat every ~1500ms (slower)
-        if (currentTime - lastBeatTime > 1500 && beatCooldown == 0) {
+        // Simulate beat more often (~900ms) and with shorter cooldown for higher sensitivity
+        if (currentTime - lastBeatTime > 900 && beatCooldown == 0) {
             lastBeatTime = currentTime;
-            beatCooldown = 90; // Prevent too many simultaneous spawns
+            beatCooldown = 45; // Prevent too many simultaneous spawns but keep things lively
             
             // Random color
             Color ballColor = new Color(
@@ -125,8 +122,8 @@ public class MusicBallAnimation implements LedAnimation {
                 random.nextInt(256)
             );
             
-            // Spawn fewer balls based on simulated audio level
-            int ballCount = (int)(Math.abs(simulatedAudioLevel) * 10);
+            // Spawn more balls based on simulated audio level
+            int ballCount = (int)(Math.abs(simulatedAudioLevel) * 18);
             for (int j = 0; j < ballCount; j++) {
                 float x = random.nextFloat() * windowWidth;
                 float y = random.nextFloat() * windowHeight;
@@ -197,25 +194,17 @@ public class MusicBallAnimation implements LedAnimation {
                 
                 // Check if ball is within this grid
                 if (ledX >= 0 && ledX < gridSize && ledY >= 0 && ledY < gridSize) {
-                    // Transform LED coordinates (90-degree rotation)
-                    int transformedX = ledY;
-                    int transformedY = ledX;
-                    
-                    // Double-check bounds
-                    if (transformedX >= 0 && transformedX < gridSize && 
-                        transformedY >= 0 && transformedY < gridSize) {
-                        
-                        // Use ball color with fade
-                        int alpha = 255 - ball.age;
-                        if (alpha > 0) {
-                            float alphaRatio = alpha / 255.0f;
-                            Color ledColor = new Color(
-                                Math.min(255, Math.max(0, (int)(ball.color.getRed() * alphaRatio))),
-                                Math.min(255, Math.max(0, (int)(ball.color.getGreen() * alphaRatio))),
-                                Math.min(255, Math.max(0, (int)(ball.color.getBlue() * alphaRatio)))
-                            );
-                            ledGrid.setLedColor(gridIndex, transformedX, transformedY, ledColor);
-                        }
+                    // Use ball color with fade
+                    int alpha = 255 - ball.age;
+                    if (alpha > 0) {
+                        float alphaRatio = alpha / 255.0f;
+                        Color ledColor = new Color(
+                            Math.min(255, Math.max(0, (int)(ball.color.getRed() * alphaRatio))),
+                            Math.min(255, Math.max(0, (int)(ball.color.getGreen() * alphaRatio))),
+                            Math.min(255, Math.max(0, (int)(ball.color.getBlue() * alphaRatio)))
+                        );
+                        // Standard logical coordinates: x = left->right, y = top->bottom
+                        ledGrid.setLedColor(gridIndex, ledX, ledY, ledColor);
                     }
                 }
             }

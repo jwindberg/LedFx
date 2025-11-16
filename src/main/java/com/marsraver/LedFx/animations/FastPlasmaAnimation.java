@@ -165,12 +165,9 @@ public class FastPlasmaAnimation implements LedAnimation {
                     // Get color from plasma image
                     Color ledColor = new Color(plasmaImage.getRGB(plasmaX, plasmaY));
                     
-                    // Transform LED coordinates to match physical LED arrangement
-                    // For 90-degree clockwise rotation: (x,y) -> (y, x)
-                    int transformedX = y;
-                    int transformedY = x;
-                    
-                    ledGrid.setLedColor(gridIndex, transformedX, transformedY, ledColor);
+                    // Use the standard logical LED coordinates (x = left->right, y = top->bottom)
+                    // so all animations share the same mapping and LedGrid handles packing.
+                    ledGrid.setLedColor(gridIndex, x, y, ledColor);
                 }
             }
         }

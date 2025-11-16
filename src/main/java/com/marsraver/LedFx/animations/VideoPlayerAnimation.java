@@ -34,6 +34,7 @@ public class VideoPlayerAnimation implements LedAnimation {
     private static final long FRAME_DELAY_MS = 33; // ~30 FPS for smooth playback
     private int frameCount = 0;
     private static final double VIDEO_SCALE = 0.9; // 90% scale - larger video display
+    private static final double VIDEO_FPS = 30.0; // Must match FFmpeg fps used for frame extraction
     private int videoScrollPosition = 0; // Scroll position for navigation
 
     @Override
@@ -108,28 +109,46 @@ public class VideoPlayerAnimation implements LedAnimation {
     }
     
     /**
-     * Starts audio playback in a separate process.
+     * Starts audio playback in a separate process at the current frame position.
+     * Used initially and whenever the user seeks in the video.
      */
     private void startAudioPlayback() {
         if (videoPath == null) {
             return;
         }
-        
+
         // Wait a moment for frames to be ready
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
             return;
         }
-        
+
+        restartAudioAtFrame(frameIndex);
+    }
+
+    /**
+     * Stops any existing audio process and restarts it at the given frame index.
+     */
+    private synchronized void restartAudioAtFrame(int frameIndexForAudio) {
+        // Stop any existing audio playback
+        if (audioProcess != null && audioProcess.isAlive()) {
+            audioProcess.destroyForcibly();
+            audioProcess = null;
+        }
+
+        // Compute time offset from frame index
+        double seconds = frameIndexForAudio / VIDEO_FPS;
+
         audioThread = new Thread(() -> {
             try {
-                log.debug("Starting audio playback...");
+                log.debug("Starting audio playback at ~{} seconds (frame {})", seconds, frameIndexForAudio);
                 ProcessBuilder pb = new ProcessBuilder(
                     "ffplay",
-                    "-nodisp",  // No video display
-                    "-autoexit", // Exit when done
-                    "-loglevel", "quiet", // Suppress output
+                    "-nodisp",           // No video display
+                    "-autoexit",         // Exit when done
+                    "-loglevel", "quiet",// Suppress output
+                    "-ss", String.valueOf(seconds),
                     videoPath
                 );
                 audioProcess = pb.start();
@@ -314,11 +333,9 @@ public class VideoPlayerAnimation implements LedAnimation {
                         
                         Color ledColor = new Color(currentFrame.getRGB(clampedX, clampedY));
                         
-                        // Transform LED coordinates (90-degree rotation)
-                        int transformedX = y;
-                        int transformedY = x;
-                        
-                        ledGrid.setLedColor(gridIndex, transformedX, transformedY, ledColor);
+                        // Use standard logical LED coordinates (x = left->right, y = top->bottom)
+                        // so mapping is consistent with other animations and LedGrid packing.
+                        ledGrid.setLedColor(gridIndex, x, y, ledColor);
                     }
                 }
             }
@@ -382,6 +399,9 @@ public class VideoPlayerAnimation implements LedAnimation {
         if (frameFiles != null && frameFiles.length > 0) {
             frameIndex = (int) (position * frameFiles.length);
             frameIndex = Math.max(0, Math.min(frameIndex, frameFiles.length - 1));
+
+            // Restart audio roughly at the new position to keep A/V in sync
+            restartAudioAtFrame(frameIndex);
         }
     }
 

@@ -121,9 +121,9 @@ public class SpinningBeachballAnimation implements LedAnimation {
         drawBeachball(canvasG, centerX, centerY, radius * 2, rotation);
         canvasG.dispose();
         
-        // For each grid, check each LED position
-        // We iterate y then x and swap the coordinates when calling setLedColor
-        // to match the serpentine LED layout (as done in TestAnimation)
+        // For each grid, check each LED position.
+        // We now treat (x,y) in the same way as TestAnimation and packing:
+        // x = 0 is left, y = 0 is top.
         for (int gridIndex = 0; gridIndex < gridCount; gridIndex++) {
             var gridConfig = ledGrid.getGridConfig(gridIndex);
             
@@ -145,7 +145,7 @@ public class SpinningBeachballAnimation implements LedAnimation {
                         Color color = new Color(rgb);
                         
                         // Display all colors without filter
-                        ledGrid.setLedColor(gridIndex, y, x, color);
+                        ledGrid.setLedColor(gridIndex, x, y, color);
                     }
                 }
             }

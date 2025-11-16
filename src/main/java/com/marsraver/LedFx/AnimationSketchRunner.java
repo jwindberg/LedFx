@@ -2,13 +2,15 @@ package com.marsraver.LedFx;
 
 import com.marsraver.LedFx.layout.LayoutConfig;
 import com.marsraver.LedFx.layout.LayoutLoader;
-import com.marsraver.LedFx.wled.WledArtNetController;
+import com.marsraver.LedFx.wled.WledDdpClient;
 import lombok.extern.log4j.Log4j2;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Arrays;
 
 /**
@@ -71,6 +73,8 @@ public class AnimationSketchRunner {
         frame.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent e) {
+                // Ensure we stop timers, animations, and external resources (e.g., video/audio)
+                stop();
                 System.exit(0);
             }
         });
@@ -207,6 +211,60 @@ public class AnimationSketchRunner {
         public AnimationSketchCanvas(int width, int height) {
             setPreferredSize(new Dimension(width, height));
             setBackground(Color.BLACK);
+
+            // Enable mouse interaction for animations that support seeking (e.g., VideoPlayerAnimation)
+            MouseAdapter mouseHandler = new MouseAdapter() {
+                private boolean dragging = false;
+
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (handleSeekEvent(e)) {
+                        dragging = true;
+                    }
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    dragging = false;
+                }
+
+                @Override
+                public void mouseDragged(MouseEvent e) {
+                    if (dragging) {
+                        handleSeekEvent(e);
+                    }
+                }
+
+                private boolean handleSeekEvent(MouseEvent e) {
+                    if (!(animation instanceof com.marsraver.LedFx.animations.VideoPlayerAnimation vp)) {
+                        return false;
+                    }
+
+                    int width = getWidth();
+                    int height = getHeight();
+
+                    // Must match scrollbar geometry used in VideoPlayerAnimation.drawScrollbar
+                    int scrollbarWidth = width - 40;
+                    int scrollbarX = 20;
+                    int scrollbarY = height - 40;
+                    int scrollbarHeight = 15;
+
+                    int mx = e.getX();
+                    int my = e.getY();
+
+                    if (mx < scrollbarX || mx > scrollbarX + scrollbarWidth) return false;
+                    if (my < scrollbarY || my > scrollbarY + scrollbarHeight) return false;
+
+                    double position = (mx - scrollbarX) / (double) scrollbarWidth;
+                    position = Math.max(0.0, Math.min(1.0, position));
+
+                    vp.seekTo(position);
+                    return true;
+                }
+            };
+
+            addMouseListener(mouseHandler);
+            addMouseMotionListener(mouseHandler);
         }
         
         @Override
@@ -256,9 +314,9 @@ public class AnimationSketchRunner {
      * Gets the WLED controller for a specific grid.
      * 
      * @param gridIndex The index of the grid
-     * @return The WLED Art-Net controller for that grid
+     * @return The WLED DDP client for that grid
      */
-    public WledArtNetController getController(int gridIndex) {
+    public WledDdpClient getController(int gridIndex) {
         return ledGrid.getController(gridIndex);
     }
     

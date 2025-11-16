@@ -138,7 +138,9 @@ public class LayoutLoader {
         
         // For now, we'll hardcode the known layouts
         // In a more sophisticated implementation, we could scan the resources directory
+        layouts.add("OneGrid");
         layouts.add("TwoGrids");
+        layouts.add("FourGrids");
         
         return layouts;
     }

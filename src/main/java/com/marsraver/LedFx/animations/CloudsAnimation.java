@@ -222,13 +222,10 @@ public class CloudsAnimation implements LedAnimation {
                     
                     // Get color from cloud image
                     Color ledColor = new Color(cloudImage.getRGB(cloudX, cloudY));
-                    
-                    // Transform LED coordinates to match physical LED arrangement
-                    // For 90-degree clockwise rotation: (x,y) -> (y, x)
-                    int transformedX = y;
-                    int transformedY = x;
-                    
-                    ledGrid.setLedColor(gridIndex, transformedX, transformedY, ledColor);
+
+                    // Use standard logical LED coordinates (x = left->right, y = top->bottom)
+                    // so mapping is consistent with other animations and LedGrid packing.
+                    ledGrid.setLedColor(gridIndex, x, y, ledColor);
                 }
             }
         }

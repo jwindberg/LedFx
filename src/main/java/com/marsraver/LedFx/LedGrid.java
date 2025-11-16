@@ -1,10 +1,9 @@
 package com.marsraver.LedFx;
 
-import com.marsraver.LedFx.layout.LayoutConfig;
 import com.marsraver.LedFx.layout.GridConfig;
-import com.marsraver.LedFx.wled.WledController;
-import com.marsraver.LedFx.wled.WledArtNetController;
-import com.marsraver.LedFx.wled.ColorMapping;
+import com.marsraver.LedFx.layout.LayoutConfig;
+import com.marsraver.LedFx.wled.WledDdpClient;
+import com.marsraver.LedFx.wled.WledInfo;
 import lombok.extern.log4j.Log4j2;
 
 import java.awt.*;
@@ -15,14 +14,12 @@ import java.util.List;
  * Unified LED grid that manages multiple LED grids based on layout configuration.
  * This replaces the old SingleLedGrid and DualLedGrid classes with a flexible system
  * that can handle any number of grids positioned anywhere in the window.
- * 
- * Now uses Art-Net UDP protocol for much faster LED updates (120+ FPS).
  */
 @Log4j2
 public class LedGrid {
     
     private final LayoutConfig layout;
-    private final List<WledArtNetController> controllers; // Changed to Art-Net controllers
+    private final List<WledDdpClient> controllers; // DDP clients, one per grid
     private final List<Color[][]> ledColors; // [gridIndex][x][y]
     private final List<GridConfig> grids;
     
@@ -32,16 +29,17 @@ public class LedGrid {
         this.controllers = new ArrayList<>();
         this.ledColors = new ArrayList<>();
         
-        // Initialize Art-Net controllers and LED color arrays for each grid
+        // Initialize DDP clients and LED color arrays for each grid
         for (int i = 0; i < grids.size(); i++) {
             GridConfig grid = grids.get(i);
-            // Use Art-Net controller with universe number based on grid index
-            // Use the color mapping from GridConfig, or default to GBR if not specified
-            ColorMapping colorMapping = grid.getColorMapping();
-            if (colorMapping == null) {
-                colorMapping = ColorMapping.GBR;
+            WledInfo info = new WledInfo(grid.getDeviceIp(), grid.getId());
+            WledDdpClient client = new WledDdpClient(info, WledDdpClient.getDefaultDdpPort());
+            try {
+                client.connect();
+            } catch (Exception e) {
+                log.error("Failed to connect DDP client for grid {} at {}: {}", grid.getId(), grid.getDeviceIp(), e.getMessage());
             }
-            controllers.add(new WledArtNetController(grid.getDeviceIp(), grid.getLedCount(), i, colorMapping));
+            controllers.add(client);
             
             // Initialize LED color array for this grid
             Color[][] gridColors = new Color[grid.getGridSize()][grid.getGridSize()];
@@ -51,16 +49,15 @@ public class LedGrid {
             clearGrid(i);
         }
         
-        log.debug("Unified LED Grid initialized with Art-Net:");
+        log.debug("Unified LED Grid initialized with DDP:");
         log.debug("  Layout: " + layout.getName());
         log.debug("  Window: " + layout.getWindowWidth() + "x" + layout.getWindowHeight());
         log.debug("  Grids: " + grids.size());
         for (int i = 0; i < grids.size(); i++) {
             GridConfig grid = grids.get(i);
             log.debug("    Grid " + (i + 1) + " (" + grid.getId() + "): " + 
-                             grid.getGridSize() + "x" + grid.getGridSize() + 
-                             " at (" + grid.getX() + ", " + grid.getY() + ") -> " + grid.getDeviceIp() +
-                             " (Universe " + i + ")");
+                             grid.getGridSize() + "x" + grid.getGridSize() +
+                             " at (" + grid.getX() + ", " + grid.getY() + ") -> " + grid.getDeviceIp());
         }
     }
     
@@ -147,29 +144,45 @@ public class LedGrid {
         boolean allSuccess = true;
         for (int i = 0; i < grids.size(); i++) {
             GridConfig grid = grids.get(i);
-            WledArtNetController controller = controllers.get(i);
+            WledDdpClient controller = controllers.get(i);
             Color[][] gridColors = ledColors.get(i);
             
-            // Convert Color[][] to int[] for WLED controller
-            // Use column-by-column layout (top to bottom, left to right)
-            int[] ledData = new int[grid.getGridSize() * grid.getGridSize() * 3];
-            // Initialize all values to 0 to prevent artifacts from uninitialized data
+            // Convert Color[][] to int[] in the order WLED appears to expect for DDP:
+            // row-major, top-left first, left-to-right, top-to-bottom.
+            //
+            // Coordinate system in memory:
+            //   gridColors[x][y], where y = 0 is top row on screen,
+            //   y = gridSize - 1 is bottom row on screen.
+            // Packing:
+            //   index 0      -> (x=0,           y=0)         top-left
+            //   index 15     -> (x=gridSize-1,  y=0)         top-right
+            //   index 240    -> (x=0,           y=gridSize-1) bottom-left
+            //   index 255    -> (x=gridSize-1,  y=gridSize-1) bottom-right
+            int gridSize = grid.getGridSize();
+            int ledCount = gridSize * gridSize;
+            int[] ledData = new int[ledCount * 3];
             java.util.Arrays.fill(ledData, 0);
+
             int index = 0;
-            for (int x = 0; x < grid.getGridSize(); x++) {
-                for (int y = 0; y < grid.getGridSize(); y++) {
-                    Color color = gridColors[x][y];
-                    if (color == null) color = Color.BLACK;
-                    // Clamp color values to valid 0-255 range to prevent edge artifacts
+            // Some panels may be physically mirrored. For now we correct Grid01,
+            // which is observed to be horizontally flipped compared to others.
+            boolean flipHorizontal = "Grid01".equalsIgnoreCase(grid.getId());
+            for (int y = 0; y < gridSize; y++) {
+                for (int x = 0; x < gridSize; x++) {
+                    int sampleX = flipHorizontal ? (gridSize - 1 - x) : x;
+                    Color color = gridColors[sampleX][y];
+                    if (color == null) {
+                        color = Color.BLACK;
+                    }
                     ledData[index++] = Math.min(255, Math.max(0, color.getRed()));
                     ledData[index++] = Math.min(255, Math.max(0, color.getGreen()));
                     ledData[index++] = Math.min(255, Math.max(0, color.getBlue()));
                 }
             }
-            
-            boolean success = controller.sendLedData(ledData);
+
+            boolean success = controller.sendRgb(ledData, ledCount);
             if (!success) {
-                log.error("Failed to send LED data to " + grid.getDeviceIp() + " (Universe " + i + ")");
+                log.error("Failed to send LED data to " + grid.getDeviceIp());
                 allSuccess = false;
             }
         }
@@ -277,9 +290,9 @@ public class LedGrid {
      * Gets the controller for a specific grid.
      * 
      * @param gridIndex The index of the grid
-     * @return The WLED Art-Net controller
+     * @return The WLED DDP client
      */
-    public WledArtNetController getController(int gridIndex) {
+    public WledDdpClient getController(int gridIndex) {
         if (gridIndex >= 0 && gridIndex < controllers.size()) {
             return controllers.get(gridIndex);
         }
@@ -290,9 +303,9 @@ public class LedGrid {
      * Gets the controller for a grid by ID.
      * 
      * @param gridId The ID of the grid
-     * @return The WLED Art-Net controller
+     * @return The WLED DDP client
      */
-    public WledArtNetController getController(String gridId) {
+    public WledDdpClient getController(String gridId) {
         GridConfig grid = layout.getGridById(gridId);
         if (grid != null) {
             int gridIndex = grids.indexOf(grid);

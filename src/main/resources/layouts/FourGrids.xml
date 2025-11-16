@@ -3,7 +3,7 @@
     
     <!-- Top Left LED Grid -->
     <grid 
-        id="Grid01" 
+        id="Grid00" 
         deviceIp="192.168.7.113" 
         ledCount="256"
         x="10" 
@@ -15,8 +15,8 @@
     
     <!-- Top Right LED Grid -->
     <grid 
-        id="Grid02" 
-        deviceIp="192.168.7.226" 
+        id="Grid01" 
+        deviceIp="192.168.7.181" 
         ledCount="256"
         x="250" 
         y="45" 
@@ -27,10 +27,10 @@
     
     <!-- Bottom Left LED Grid -->
     <grid 
-        id="Grid03" 
-        deviceIp="192.168.7.181" 
+        id="Grid02" 
+        deviceIp="192.168.7.167" 
         ledCount="256"
-        x="10" 
+        x="250" 
         y="285" 
         width="240" 
         height="240"
@@ -39,10 +39,10 @@
     
     <!-- Bottom Right LED Grid -->
     <grid 
-        id="Grid04" 
-        deviceIp="192.168.7.167" 
+        id="Grid03" 
+        deviceIp="192.168.7.226" 
         ledCount="256"
-        x="250" 
+        x="10" 
         y="285" 
         width="240" 
         height="240"
