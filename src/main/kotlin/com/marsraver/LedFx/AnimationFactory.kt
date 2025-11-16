@@ -10,6 +10,8 @@ object AnimationFactory {
          * Gets the default animation type.
          *
          * @return The default animation type
+         *
+         * Currently: first animation in alphabetical order by display name.
          */
-        get() = AnimationType.SPINNING_BEACHBALL
+        get() = AnimationType.entries.sortedBy { it.displayName.lowercase() }.first()
 }

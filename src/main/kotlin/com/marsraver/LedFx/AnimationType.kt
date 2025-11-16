@@ -15,16 +15,18 @@ enum class AnimationType(
     val id: String,
     displayName: String
 ) {
-    SPINNING_BEACHBALL("spinning-beachball", "Spinning Beachball Animation"),
-    BOUNCING_BALL("bouncing-ball", "Bouncing Ball Animation"),
-    MUSIC_BALL("music-ball", "Music Ball Animation"),
-    VIDEO_PLAYER("video-player", "Video Player Animation"),
-    FAST_PLASMA("fast-plasma", "Fast Plasma Animation"),
-    CLOUDS("clouds", "Clouds Animation"),
-    PERLIN_OSCILLATOR("perlin-oscillator", "Perlin Oscillator Animation"),
-    STARFIELD("starfield", "Starfield Animation"),
+    AUDIO_VISUALIZER("audio-visualizer", "Audio Visualizer"),
     BLACK_HOLE("black-hole", "Black Hole Animation"),
-    BLURZ("blurz", "Blurz Animation");
+    BLURZ("blurz", "Blurz Animation"),
+    BOUNCING_BALL("bouncing-ball", "Bouncing Ball Animation"),
+    CLOUDS("clouds", "Clouds Animation"),
+    FAST_PLASMA("fast-plasma", "Fast Plasma Animation"),
+    MUSIC_BALL("music-ball", "Music Ball Animation"),
+    PERLIN_OSCILLATOR("perlin-oscillator", "Perlin Oscillator Animation"),
+    SOUND_BUBBLE("sound-bubble", "Sound Bubble Animation"),
+    SPINNING_BEACHBALL("spinning-beachball", "Spinning Beachball Animation"),
+    STARFIELD("starfield", "Starfield Animation"),
+    VIDEO_PLAYER("video-player", "Video Player Animation");
 
     /**
      * Gets the human-readable display name for this animation type.
@@ -72,16 +74,18 @@ enum class AnimationType(
 
         fun createAnimation(animationType: AnimationType): LedAnimation =
             when (animationType) {
-                AnimationType.SPINNING_BEACHBALL -> SpinningBeachballAnimation()
-                AnimationType.BOUNCING_BALL -> BouncingBallAnimation()
-                AnimationType.MUSIC_BALL -> MusicBallAnimation()
-                AnimationType.VIDEO_PLAYER -> VideoPlayerAnimation()
-                AnimationType.FAST_PLASMA -> FastPlasmaAnimation()
-                AnimationType.CLOUDS -> CloudsAnimation()
-                AnimationType.PERLIN_OSCILLATOR -> PerlinOscillatorAnimation()
-                AnimationType.STARFIELD -> StarfieldAnimation()
+                AnimationType.AUDIO_VISUALIZER -> AudioVisualizerAnimation()
                 AnimationType.BLACK_HOLE -> BlackHoleAnimation()
                 AnimationType.BLURZ -> BlurzAnimation()
+                AnimationType.BOUNCING_BALL -> BouncingBallAnimation()
+                AnimationType.CLOUDS -> CloudsAnimation()
+                AnimationType.FAST_PLASMA -> FastPlasmaAnimation()
+                AnimationType.MUSIC_BALL -> MusicBallAnimation()
+                AnimationType.PERLIN_OSCILLATOR -> PerlinOscillatorAnimation()
+                AnimationType.SOUND_BUBBLE -> SoundBubbleAnimation()
+                AnimationType.SPINNING_BEACHBALL -> SpinningBeachballAnimation()
+                AnimationType.STARFIELD -> StarfieldAnimation()
+                AnimationType.VIDEO_PLAYER -> VideoPlayerAnimation()
             }
     }
 }

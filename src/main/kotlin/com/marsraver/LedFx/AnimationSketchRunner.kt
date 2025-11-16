@@ -123,7 +123,7 @@ class AnimationSketchRunner(initialAnimationType: AnimationType, layoutName: Str
      */
     private fun onAnimationChanged(@Suppress("UNUSED_PARAMETER") e: ActionEvent?) {
         val selectedType = animationSelector!!.selectedItem as? AnimationType ?: return
-        switchToAnimation(selectedType)
+            switchToAnimation(selectedType)
     }
 
     /**
