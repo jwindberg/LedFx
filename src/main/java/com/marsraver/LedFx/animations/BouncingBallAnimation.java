@@ -203,36 +203,6 @@ public class BouncingBallAnimation implements LedAnimation {
         }
     }
     
-    /**
-     * Adds a glow effect around a ball position.
-     */
-    private void addGlowEffect(int gridIndex, int ledX, int ledY, Color ballColor) {
-        int glowRadius = 2; // Increased glow radius for better visibility
-        for (int dy = -glowRadius; dy <= glowRadius; dy++) {
-            for (int dx = -glowRadius; dx <= glowRadius; dx++) {
-                int glowX = ledX + dx;
-                int glowY = ledY + dy;
-                
-                if (glowX >= 0 && glowX < ledGrid.getGridSize() && 
-                    glowY >= 0 && glowY < ledGrid.getGridSize()) {
-                    
-                    // Calculate distance for glow intensity
-                    double distance = Math.sqrt(dx * dx + dy * dy);
-                    if (distance <= glowRadius) {
-                        float intensity = 1.0f - (float)(distance / glowRadius) * 0.5f; // Reduced intensity falloff
-                        Color glowColor = new Color(
-                            Math.min(255, Math.max(0, (int)(ballColor.getRed() * intensity))),
-                            Math.min(255, Math.max(0, (int)(ballColor.getGreen() * intensity))),
-                            Math.min(255, Math.max(0, (int)(ballColor.getBlue() * intensity)))
-                        );
-                        
-                        ledGrid.setLedColor(gridIndex, glowX, glowY, glowColor);
-                    }
-                }
-            }
-        }
-    }
-    
     @Override
     public String getName() {
         return "Bouncing Ball";

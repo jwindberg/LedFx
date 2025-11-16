@@ -28,10 +28,15 @@ public class CloudsAnimation implements LedAnimation {
     private float timeScale = 0.00005f; // Slower movement
     private float hueScale = 0.00005f;  // Slower color cycling
     
-    // Color parameters
+    // Color parameters (reserved for future tweaks)
+    // Currently not used directly but kept for potential tuning
+    @SuppressWarnings("unused")
     private float baseHue = 0.0f;
+    @SuppressWarnings("unused")
     private float saturation = 80.0f;
+    @SuppressWarnings("unused")
     private float brightnessScale = 500.0f;
+    @SuppressWarnings("unused")
     private float brightnessOffset = 0.4f;
 
     @Override

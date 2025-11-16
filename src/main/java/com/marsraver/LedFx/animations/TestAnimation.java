@@ -6,7 +6,6 @@ import com.marsraver.LedFx.layout.GridConfig;
 import lombok.extern.log4j.Log4j2;
 
 import java.awt.*;
-import java.awt.image.BufferedImage;
 
 /**
  * Test animation that lights corner LEDs with distinct colors on each grid.
@@ -15,7 +14,9 @@ import java.awt.image.BufferedImage;
 @Log4j2
 public class TestAnimation implements LedAnimation {
     
+    @SuppressWarnings("unused")
     private LedGrid ledGrid;
+    @SuppressWarnings("unused")
     private int windowWidth, windowHeight;
     
     @Override

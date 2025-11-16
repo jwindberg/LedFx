@@ -17,7 +17,9 @@ import java.util.Random;
 public class PerlinOscillatorAnimation implements LedAnimation {
     
     private LedGrid ledGrid;
+    @SuppressWarnings("unused")
     private int windowWidth, windowHeight;
+    @SuppressWarnings("unused")
     private long startTime;
     
     // Oscillator parameters
@@ -195,7 +197,7 @@ public class PerlinOscillatorAnimation implements LedAnimation {
             g.fill(ellipse);
             
             // Update radius based on Perlin noise
-            float noiseValue = noise(noiseX + x * 0.05f, noiseY + y * 0.05f);
+            float noiseValue = noise(noiseX + x * 0.05f, noiseY + y * 0.05f, 0.0f);
             rad += map(noiseValue, 0f, 1f, (float) (Math.PI / 128), (float) (Math.PI / 6));
             
             // Keep radius between 0 and 2*PI
@@ -232,17 +234,6 @@ public class PerlinOscillatorAnimation implements LedAnimation {
      */
     private float map(float value, float start1, float stop1, float start2, float stop2) {
         return start2 + (stop2 - start2) * ((value - start1) / (stop1 - start1));
-    }
-    
-    /**
-     * Simple Perlin noise approximation using a smooth random function.
-     */
-    private float noise(float x) {
-        return noise(x, 0, 0);
-    }
-    
-    private float noise(float x, float y) {
-        return noise(x, y, 0);
     }
     
     private float noise(float x, float y, float z) {

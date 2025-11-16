@@ -328,7 +328,6 @@ public class LedGrid {
      */
     private void drawSingleGrid(Graphics2D g, int gridIndex) {
         GridConfig grid = grids.get(gridIndex);
-        Color[][] gridColors = ledColors.get(gridIndex);
         
         // Draw grid lines
         g.setColor(new Color(255, 255, 255, 100)); // Semi-transparent white
@@ -368,16 +367,11 @@ public class LedGrid {
     public void sampleColors(Graphics2D g) {
         for (int gridIndex = 0; gridIndex < grids.size(); gridIndex++) {
             GridConfig grid = grids.get(gridIndex);
-            Color[][] gridColors = ledColors.get(gridIndex);
-            
             for (int ledY = 0; ledY < grid.getGridSize(); ledY++) {
                 for (int ledX = 0; ledX < grid.getGridSize(); ledX++) {
-                    int centerX = grid.getX() + (ledX * grid.getPixelSize()) + (grid.getPixelSize() / 2);
-                    int centerY = grid.getY() + (ledY * grid.getPixelSize()) + (grid.getPixelSize() / 2);
-                    
-                    // Sample color from the center of the LED area
+                    // Sample color from the current graphics color (placeholder behavior)
                     Color color = new Color(g.getColor().getRGB());
-                    gridColors[ledX][ledY] = color;
+                    ledColors.get(gridIndex)[ledX][ledY] = color;
                 }
             }
         }

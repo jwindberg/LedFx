@@ -14,6 +14,7 @@ import java.util.Random;
  */
 public class StarfieldAnimation implements LedAnimation {
 
+    @SuppressWarnings("unused")
     private LedGrid ledGrid;
     private int windowWidth, windowHeight;
     private List<Star> stars;

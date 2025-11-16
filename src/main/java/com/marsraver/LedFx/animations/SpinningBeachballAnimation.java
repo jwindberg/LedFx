@@ -17,6 +17,7 @@ public class SpinningBeachballAnimation implements LedAnimation {
     private LedGrid ledGrid;
     private long lastTime;
     private float rotation = 0;
+    @SuppressWarnings("unused")
     private int windowWidth, windowHeight;
     
     // Beachball colors (six bright, vibrant colors)

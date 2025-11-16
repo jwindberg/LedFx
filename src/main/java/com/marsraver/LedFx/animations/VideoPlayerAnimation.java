@@ -35,7 +35,6 @@ public class VideoPlayerAnimation implements LedAnimation {
     private int frameCount = 0;
     private static final double VIDEO_SCALE = 0.9; // 90% scale - larger video display
     private static final double VIDEO_FPS = 30.0; // Must match FFmpeg fps used for frame extraction
-    private int videoScrollPosition = 0; // Scroll position for navigation
 
     @Override
     public void init(int width, int height, LedGrid ledGrid) {
