@@ -12,9 +12,9 @@ enum class AnimationType(
      *
      * @return The animation ID
      */
-    val id: String, displayName: String
+    val id: String,
+    displayName: String
 ) {
-    TEST("test", "Test Animation"),
     SPINNING_BEACHBALL("spinning-beachball", "Spinning Beachball Animation"),
     BOUNCING_BALL("bouncing-ball", "Bouncing Ball Animation"),
     MUSIC_BALL("music-ball", "Music Ball Animation"),
@@ -28,14 +28,10 @@ enum class AnimationType(
 
     /**
      * Gets the human-readable display name for this animation type.
-     *
-     * @return The display name
      */
-    val displayName: String?
+    val displayName: String = displayName
 
-    init {
-        this.displayName = displayName
-    }
+    override fun toString(): String = displayName
 
     companion object {
         /**
@@ -69,13 +65,13 @@ enum class AnimationType(
 
 
         fun createAnimation(animationId: String?): LedAnimation {
-            val type: AnimationType? = checkNotNull(fromId(animationId))
-            return AnimationType.Companion.createAnimation(type!!)
+            val animationType = fromId(animationId)
+                ?: error("Unknown animation id '$animationId'")
+            return createAnimation(animationType)
         }
 
-        fun createAnimation(animationType: AnimationType): LedAnimation {
-            return when (animationType) {
-                AnimationType.TEST -> TestAnimation()
+        fun createAnimation(animationType: AnimationType): LedAnimation =
+            when (animationType) {
                 AnimationType.SPINNING_BEACHBALL -> SpinningBeachballAnimation()
                 AnimationType.BOUNCING_BALL -> BouncingBallAnimation()
                 AnimationType.MUSIC_BALL -> MusicBallAnimation()
@@ -87,6 +83,5 @@ enum class AnimationType(
                 AnimationType.BLACK_HOLE -> BlackHoleAnimation()
                 AnimationType.BLURZ -> BlurzAnimation()
             }
-        }
     }
 }

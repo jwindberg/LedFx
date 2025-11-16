@@ -94,7 +94,11 @@ class AnimationSketchRunner(initialAnimationType: AnimationType, layoutName: Str
         animationLabel.setForeground(Color.WHITE)
         topPanel.add(animationLabel)
 
-        animationSelector = JComboBox(AnimationType.entries.toTypedArray())
+        val sortedAnimations = AnimationType.entries
+            .sortedBy { it.displayName.lowercase() }
+            .toTypedArray()
+
+        animationSelector = JComboBox(sortedAnimations)
         animationSelector!!.setBackground(Color.WHITE)
         animationSelector!!.addActionListener { this.onAnimationChanged(null) }
         topPanel.add(animationSelector)

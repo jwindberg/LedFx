@@ -19,8 +19,8 @@ object LedFxApplication {
                 var layoutName: String = if (args.isNotEmpty()) args[0] else "FourGrids"
 
 
-                // Get animation type from args or use default
-                val animationTypeId: String = if (args.size > 1) args[1] else "test"
+                // Get animation type from args or use default (use spinning beachball as default)
+                val animationTypeId: String = if (args.size > 1) args[1] else "spinning-beachball"
 
                 log.info(
                     "Starting LED Layout application with layout: {} and animation: {}",
@@ -46,8 +46,8 @@ object LedFxApplication {
                 if (animationType == null) {
                     log.error("Unknown animation type: {}", animationTypeId)
                     log.error(AnimationType.availableAnimations)
-                    log.error("Using default animation: test")
-                    animationType = AnimationType.TEST
+                    log.error("Using default animation: spinning-beachball")
+                    animationType = AnimationType.SPINNING_BEACHBALL
                 }
 
 

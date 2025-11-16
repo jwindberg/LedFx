@@ -11,5 +11,5 @@ object AnimationFactory {
          *
          * @return The default animation type
          */
-        get() = AnimationType.TEST
+        get() = AnimationType.SPINNING_BEACHBALL
 }
