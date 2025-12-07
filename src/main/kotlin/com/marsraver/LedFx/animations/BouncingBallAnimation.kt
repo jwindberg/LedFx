@@ -29,16 +29,20 @@ class BouncingBallAnimation : LedAnimation {
     private var hue = 0f
     private var windowWidth = 0
     private var windowHeight = 0
+    private var gridBounds: LedGrid.GridBounds? = null
     private var random: Random? = null
 
     override fun init(width: Int, height: Int, ledGrid: LedGrid) {
         this.windowWidth = width
         this.windowHeight = height
 
-
-        // Start the ball in the center of the window
-        ballX = width / 2
-        ballY = height / 2
+        // Get LED grid bounds to constrain ball to LED area
+        gridBounds = ledGrid.getGridBounds(width, height)
+        val bounds = gridBounds!!
+        
+        // Start the ball in the center of the LED grid area
+        ballX = bounds.centerX
+        ballY = bounds.centerY
 
 
         // Set initial color
@@ -55,6 +59,9 @@ class BouncingBallAnimation : LedAnimation {
     }
 
     override fun draw(g: Graphics2D, width: Int, height: Int, ledGrid: LedGrid) {
+        // Update grid bounds in case they changed
+        gridBounds = ledGrid.getGridBounds(width, height)
+        
         // Clear the background
         g.setColor(Color.BLACK)
         g.fillRect(0, 0, width, height)
@@ -78,12 +85,15 @@ class BouncingBallAnimation : LedAnimation {
      * Updates and draws the single ball.
      */
     private fun updateAndDrawBall(g: Graphics2D) {
+        val bounds = gridBounds ?: return
+        
         // Update ball position
         ballX += velocityX
         ballY += velocityY
 
-        val hitX = ballX <= ballSize / 2 || ballX >= windowWidth - ballSize / 2
-        val hitY = ballY <= ballSize / 2 || ballY >= windowHeight - ballSize / 2
+        // Constrain ball to LED grid bounds
+        val hitX = ballX <= bounds.minX + ballSize / 2 || ballX >= bounds.maxX - ballSize / 2
+        val hitY = ballY <= bounds.minY + ballSize / 2 || ballY >= bounds.maxY - ballSize / 2
 
 
         // Handle corner bounces properly

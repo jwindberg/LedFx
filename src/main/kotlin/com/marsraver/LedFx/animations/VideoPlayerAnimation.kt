@@ -197,9 +197,11 @@ class VideoPlayerAnimation : LedAnimation {
         }
 
 
-        // Extract frames to temporary directory (scaled to 60% of window size)
-        val scaledWidth = (windowWidth * VIDEO_SCALE).toInt()
-        val scaledHeight = (windowHeight * VIDEO_SCALE).toInt()
+        // Extract frames to temporary directory (scaled to 60% of LED grid size)
+        // Get LED grid bounds to scale frames appropriately
+        val bounds = ledGrid!!.getGridBounds(windowWidth, windowHeight)
+        val scaledWidth = (bounds.width * VIDEO_SCALE).toInt()
+        val scaledHeight = (bounds.height * VIDEO_SCALE).toInt()
         log.debug("Extracting frames from video (this may take a while)...")
         val extractPb = ProcessBuilder(
             "ffmpeg",
@@ -265,15 +267,19 @@ class VideoPlayerAnimation : LedAnimation {
         }
 
 
-        // Draw current video frame (centered at 60% scale)
+        // Draw current video frame, constrained to LED grid bounds
         g.setColor(Color.BLACK)
         g.fillRect(0, 0, width, height)
 
+        // Get LED grid bounds to constrain video to LED area
+        val bounds = ledGrid.getGridBounds(width, height)
+
         if (currentFrame != null) {
-            val scaledWidth = (width * VIDEO_SCALE).toInt()
-            val scaledHeight = (height * VIDEO_SCALE).toInt()
-            val offsetX = (width - scaledWidth) / 2
-            val offsetY = (height - scaledHeight) / 2
+            // Scale video relative to LED grid size (60% of LED grid)
+            val scaledWidth = (bounds.width * VIDEO_SCALE).toInt()
+            val scaledHeight = (bounds.height * VIDEO_SCALE).toInt()
+            val offsetX = bounds.centerX - scaledWidth / 2
+            val offsetY = bounds.centerY - scaledHeight / 2
             g.drawImage(currentFrame, offsetX, offsetY, scaledWidth, scaledHeight, null)
         }
 

@@ -1,16 +1,11 @@
 package com.marsraver.LedFx.animations
 
-import com.marsraver.LedFx.LedAnimation
 import com.marsraver.LedFx.LedGrid
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.awt.*
 import java.awt.geom.AffineTransform
 import java.awt.image.BufferedImage
-import javax.sound.sampled.AudioFormat
-import javax.sound.sampled.AudioSystem
-import javax.sound.sampled.TargetDataLine
-import kotlin.concurrent.thread
 import kotlin.math.*
 
 /**
@@ -21,20 +16,17 @@ import kotlin.math.*
  * - Particles orbit around the center, with orbits and sizes modulated by the audio.
  * - The same visuals are rendered to the Swing window and mapped to the LED grid.
  */
-class SoundBubbleAnimation : LedAnimation {
-    private var ledGrid: LedGrid? = null
-    private var windowWidth: Int = 0
-    private var windowHeight: Int = 0
-
+class SoundBubbleAnimation : RMSAnimation() {
     // Visual configuration
     private val rippleSize = 800f
     private val bubbleCount = 40
-    private val particleCount = 40
+    override val bandCount = 40 // Maps to particleCount
+
     private val gravity = 0.05f
     private val gravityRadius = 0.93f
 
     private val bubbles = Array(bubbleCount) { Bubble(0f, 0f, Color.BLACK, 0f) }
-    private val particles = Array(particleCount) { i ->
+    private val particles = Array(bandCount) { i ->
         val orbit = random(30f, 70f)
         val speed = random(-0.02f, 0.02f)
         val size = random(30f, 80f)
@@ -52,36 +44,73 @@ class SoundBubbleAnimation : LedAnimation {
     private val particleOuterColor = Color(200, 200, 220, 130)
     private val particleInnerColor = Color(240, 240, 255, 220)
 
-    // Audio capture state
-    @Volatile
-    private var running = false
-    private var audioThread: Thread? = null
-    private var line: TargetDataLine? = null
-
-    @Volatile
-    private var masterLevel = 0f
-
-    // Per-particle band levels (written from audio thread, read from render thread)
-    private val bandLevels = FloatArray(particleCount)
-
     // Offscreen buffer for drawing and LED sampling
     private var offscreen: BufferedImage? = null
     private var offG: Graphics2D? = null
 
     override fun init(width: Int, height: Int, ledGrid: LedGrid) {
-        this.ledGrid = ledGrid
-        this.windowWidth = width
-        this.windowHeight = height
-
+        super.init(width, height, ledGrid)
         offscreen = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
         offG = offscreen!!.createGraphics().apply {
             setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
             setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
         }
-
-        startAudioCapture()
-        log.debug("SoundBubble Animation initialized with live audio")
     }
+
+    override fun processAudioData(samples: FloatArray, sampleCount: Int) {
+        // Custom RMS processing with log transform for master level
+        var sumSq = 0.0
+        val perBandSq = FloatArray(bandCount)
+        val perBandCount = IntArray(bandCount)
+        
+        val validCount = minOf(sampleCount, samples.size)
+        for (i in 0 until validCount) {
+            val sample = samples[i]
+            val sampleSq = sample * sample
+            sumSq += sampleSq.toDouble()
+            
+            val band = (i * bandCount / validCount).coerceIn(0, bandCount - 1)
+            perBandSq[band] += sampleSq
+            perBandCount[band]++
+        }
+
+        val totalSamples = maxOf(1, validCount).toDouble()
+        val rms = sqrt(sumSq / totalSamples).toFloat()
+        
+        // Custom log transform for master level (like original code)
+        val newMaster = (ln(1f + rms * 50f)).coerceIn(0f, 1f)
+        
+        // Smooth master level with custom coefficients
+        masterLevel = masterLevel * 0.7f + newMaster * 0.3f
+
+        // Compute per-band RMS levels
+        var maxBand = 1e-6f
+        val bandRms = FloatArray(bandCount)
+        
+        for (b in 0 until bandCount) {
+            if (perBandCount[b] > 0) {
+                val rmsBand = sqrt(perBandSq[b] / perBandCount[b].toDouble()).toFloat()
+                bandRms[b] = rmsBand
+                if (rmsBand > maxBand) maxBand = rmsBand
+            } else {
+                bandRms[b] = 0f
+            }
+        }
+
+        // Normalize and update band levels (thread-safe via base class)
+        if (maxBand < 1e-6f) maxBand = 1e-6f
+        for (b in 0 until bandCount) {
+            val normalized = (bandRms[b] / maxBand).coerceIn(0f, 1f)
+            // Custom smoothing like original code (override base class smoothing)
+            bandLevels[b] = if (normalized > bandLevels[b]) {
+                bandLevels[b] + (normalized - bandLevels[b]) * 0.8f
+            } else {
+                bandLevels[b] + (normalized - bandLevels[b]) * 0.3f
+            }
+        }
+    }
+
+    override fun getBufferSize(): Int = 2048
 
     override fun draw(g: Graphics2D, width: Int, height: Int, ledGrid: LedGrid) {
         val canvas = offscreen ?: return
@@ -89,24 +118,40 @@ class SoundBubbleAnimation : LedAnimation {
 
         noiseSeed += 0.01f
 
+        // Get LED grid bounds to constrain animation to LED area
+        val bounds = ledGrid.getGridBounds(width, height)
+
         // Background
         scrRefresh(cg, width, height)
 
-        // Draw in centered coordinate system
-        val centerX = width / 2.0
-        val centerY = height / 2.0
+        // Draw in centered coordinate system, using LED grid center
+        val centerX = bounds.centerX.toDouble()
+        val centerY = bounds.centerY.toDouble()
         val oldTx: AffineTransform = cg.transform
         cg.translate(centerX, centerY)
+        
+        // Set clip region to LED grid bounds to prevent drawing outside
+        val maxRadius = min(bounds.width, bounds.height) / 2.0
+        cg.clip = java.awt.geom.Ellipse2D.Double(-maxRadius, -maxRadius, maxRadius * 2, maxRadius * 2)
+        
+        // Draw concentric background disks at LED grid center
+        val gridSize = min(bounds.width, bounds.height).toDouble()
+        cg.color = bgColorMid
+        val r1 = (gridSize * 0.4).toInt()
+        cg.fillOval(-r1 / 2, -r1 / 2, r1, r1)
+        cg.color = bgColorInner
+        val r2 = (gridSize * 0.2).toInt()
+        cg.fillOval(-r2 / 2, -r2 / 2, r2, r2)
 
         // Particles
-        for (i in 0 until particleCount) {
-            particles[i].update(cg, bandLevels[i])
+        for (i in 0 until bandCount) {
+            particles[i].update(cg, bandLevels[i], bounds)
         }
 
         // Bubbles (central ripple trail) with slow rotation
         rotateAngle += (pseudoNoise(noiseSeed) - 0.5f) * rotateSpeed
         cg.rotate(rotateAngle.toDouble())
-        drawRipples(cg)
+        drawRipples(cg, bounds)
         for (i in 0 until bubbleCount) {
             bubbles[i].draw(cg)
         }
@@ -127,22 +172,11 @@ class SoundBubbleAnimation : LedAnimation {
     }
 
     /**
-     * Clears and redraws the background with concentric disks.
+     * Clears and redraws the background.
      */
     private fun scrRefresh(g: Graphics2D, width: Int, height: Int) {
         g.color = bgColorOuter
         g.fillRect(0, 0, width, height)
-
-        val centerX = width / 2
-        val centerY = height / 2
-
-        g.color = bgColorMid
-        val r1 = (width * 0.4).toInt()
-        g.fillOval(centerX - r1 / 2, centerY - r1 / 2, r1, r1)
-
-        g.color = bgColorInner
-        val r2 = (width * 0.2).toInt()
-        g.fillOval(centerX - r2 / 2, centerY - r2 / 2, r2, r2)
     }
 
     private inner class Particle(
@@ -155,7 +189,7 @@ class SoundBubbleAnimation : LedAnimation {
         // Assign each particle a base hue so they appear in different colors
         private val hue: Float = random(0f, 360f)
 
-        fun update(g: Graphics2D, level: Float) {
+        fun update(g: Graphics2D, level: Float, bounds: LedGrid.GridBounds) {
             val amp = ln(1f + level * 40f).coerceAtLeast(0f)
 
             // Angular position modulated by audio level
@@ -163,7 +197,8 @@ class SoundBubbleAnimation : LedAnimation {
 
             // Pseudo noise for radial variation
             val n = pseudoNoise(noiseSeed + id * 0.31f)
-            val radial = (orbit + 300f * n) * (0.6f + amp * 1.4f)
+            val maxRadius = min(bounds.width, bounds.height) / 2.0f
+            val radial = ((orbit + 300f * n) * (0.6f + amp * 1.4f)).coerceAtMost(maxRadius * 0.95f)
 
             val x = radial * cos(crtPosAngle.toDouble()).toFloat()
             val y = radial * sin(crtPosAngle.toDouble()).toFloat()
@@ -227,9 +262,12 @@ class SoundBubbleAnimation : LedAnimation {
     /**
      * Updates the ripple bubbles based on current audio level.
      */
-    private fun drawRipples(g: Graphics2D) {
+    @Suppress("UNUSED_PARAMETER")
+    private fun drawRipples(g: Graphics2D, bounds: LedGrid.GridBounds) {
         val mainLevel = masterLevel.coerceIn(0f, 1f)
-        val movRadius = windowWidth * 0.40f
+        val gridSize = min(bounds.width, bounds.height).toFloat()
+        val maxRadius = gridSize / 2.0f
+        val movRadius = (gridSize * 0.40f).coerceAtMost(maxRadius * 0.95f)
 
         // Head bubble driven by audio
         val angle = Math.PI.toFloat() * mainLevel * 2f - (Math.PI.toFloat() / 2f)
@@ -240,7 +278,7 @@ class SoundBubbleAnimation : LedAnimation {
         val hue = 10f + 150f * pseudoNoise(noiseSeed + 10f)
         val c = Color.getHSBColor((hue / 360f).coerceIn(0f, 1f), 0.4f, 1.0f)
         bubbles[0].color = c
-        bubbles[0].radius = mainLevel * (rippleSize + 0.02f * windowWidth)
+        bubbles[0].radius = mainLevel * (rippleSize + 0.02f * gridSize)
 
         // Trail bubbles follow with gravity-like decay
         for (i in bubbleCount - 1 downTo 1) {
@@ -289,84 +327,6 @@ class SoundBubbleAnimation : LedAnimation {
         ledGrid.sendToDevices()
     }
 
-    /**
-     * Starts the audio capture thread and computes simple per-band levels.
-     */
-    private fun startAudioCapture() {
-        try {
-            val format = AudioFormat(44100f, 16, 1, true, false)
-            val info = javax.sound.sampled.DataLine.Info(TargetDataLine::class.java, format)
-            val targetLine = AudioSystem.getLine(info) as TargetDataLine
-            val bufferSize = 2048
-            targetLine.open(format, bufferSize * 2)
-            targetLine.start()
-
-            line = targetLine
-            running = true
-
-            audioThread = thread(start = true, isDaemon = true, name = "SoundBubble-Audio") {
-                val byteBuffer = ByteArray(bufferSize * 2)
-                val perBandSq = FloatArray(particleCount)
-                val perBandCount = IntArray(particleCount)
-
-                while (running) {
-                    val read = targetLine.read(byteBuffer, 0, byteBuffer.size)
-                    if (read <= 0) continue
-
-                    var idx = 0
-                    var sumSq = 0f
-                    var sampleIndex = 0
-                    perBandSq.fill(0f)
-                    perBandCount.fill(0)
-
-                    while (idx + 1 < read) {
-                        val lo = byteBuffer[idx].toInt() and 0xFF
-                        val hi = byteBuffer[idx + 1].toInt()
-                        val sample = ((hi shl 8) or lo) / 32768.0f
-                        idx += 2
-
-                        sumSq += sample * sample
-                        val band = (sampleIndex * particleCount / (bufferSize)).coerceIn(0, particleCount - 1)
-                        perBandSq[band] += sample * sample
-                        perBandCount[band]++
-                        sampleIndex++
-                    }
-
-                    val totalSamples = max(1, sampleIndex)
-                    val rms = sqrt(sumSq / totalSamples)
-                    val newMaster = (ln(1f + rms * 50f)).coerceIn(0f, 1f)
-                    masterLevel = masterLevel * 0.7f + newMaster * 0.3f
-
-                    var maxBand = 1e-6f
-                    for (b in 0 until particleCount) {
-                        if (perBandCount[b] > 0) {
-                            val rmsBand = sqrt(perBandSq[b] / perBandCount[b])
-                            bandLevels[b] = rmsBand
-                            if (rmsBand > maxBand) maxBand = rmsBand
-                        } else {
-                            bandLevels[b] = 0f
-                        }
-                    }
-
-                    if (maxBand < 1e-6f) maxBand = 1e-6f
-                    for (b in 0 until particleCount) {
-                        bandLevels[b] = (bandLevels[b] / maxBand).coerceIn(0f, 1f)
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            log.error("Failed to start audio capture for SoundBubble", e)
-        }
-    }
-
-    override fun stop() {
-        running = false
-        try {
-            line?.stop()
-            line?.close()
-        } catch (_: Exception) {
-        }
-    }
 
     override fun getName(): String = "Sound Bubble"
 

@@ -280,6 +280,63 @@ class LedGrid(
         get() = layout.windowHeight
 
     /**
+     * Gets the bounding box of all LED grids in window coordinates.
+     * This is useful for constraining animations to the actual LED area.
+     *
+     * @param windowWidth Fallback width if no grids found
+     * @param windowHeight Fallback height if no grids found
+     * @return A data class containing min/max X/Y coordinates, width, height, and center
+     */
+    fun getGridBounds(windowWidth: Int = this.windowWidth, windowHeight: Int = this.windowHeight): GridBounds {
+        var minX = windowWidth
+        var minY = windowHeight
+        var maxX = 0
+        var maxY = 0
+
+        for (gridIndex in 0 until gridCount) {
+            val cfg = getGridConfig(gridIndex) ?: continue
+            val gridLeft = cfg.x
+            val gridTop = cfg.y
+            val gridRight = cfg.x + cfg.gridSize * cfg.pixelSize
+            val gridBottom = cfg.y + cfg.gridSize * cfg.pixelSize
+
+            if (gridLeft < minX) minX = gridLeft
+            if (gridTop < minY) minY = gridTop
+            if (gridRight > maxX) maxX = gridRight
+            if (gridBottom > maxY) maxY = gridBottom
+        }
+
+        // If no grids found, use full window as fallback
+        if (minX >= maxX || minY >= maxY) {
+            minX = 0
+            minY = 0
+            maxX = windowWidth
+            maxY = windowHeight
+        }
+
+        val width = maxX - minX
+        val height = maxY - minY
+        val centerX = (minX + maxX) / 2
+        val centerY = (minY + maxY) / 2
+
+        return GridBounds(minX, minY, maxX, maxY, width, height, centerX, centerY)
+    }
+
+    /**
+     * Data class for LED grid bounds.
+     */
+    data class GridBounds(
+        val minX: Int,
+        val minY: Int,
+        val maxX: Int,
+        val maxY: Int,
+        val width: Int,
+        val height: Int,
+        val centerX: Int,
+        val centerY: Int
+    )
+
+    /**
      * Gets a specific grid configuration.
      *
      * @param gridIndex The index of the grid

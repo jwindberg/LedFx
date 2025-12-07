@@ -112,6 +112,11 @@ class StarfieldAnimation : LedAnimation {
         g.setColor(Color.BLACK)
         g.fillRect(0, 0, width, height)
 
+        // Get LED grid bounds to constrain stars to LED area
+        val bounds = ledGrid.getGridBounds(width, height)
+        val gridWidth = bounds.width
+        val gridHeight = bounds.height
+
         val centerX = 0f
         val centerY = 0f
         // Reduce overall star speed again (quarter of original)
@@ -123,9 +128,16 @@ class StarfieldAnimation : LedAnimation {
             star.update(centerX, centerY, maxSpeed)
 
 
-            // Convert normalized coordinates to screen coordinates
-            val screenX = ((star.x + 1) * width / 2).toInt()
-            val screenY = ((star.y + 1) * height / 2).toInt()
+            // Convert normalized coordinates to LED grid coordinates
+            val normalizedX = (star.x + 1) / 2.0f // Convert from -1..1 to 0..1
+            val normalizedY = (star.y + 1) / 2.0f
+            val screenX = (bounds.minX + normalizedX * gridWidth).toInt()
+            val screenY = (bounds.minY + normalizedY * gridHeight).toInt()
+            
+            // Only draw if within LED grid bounds
+            if (screenX < bounds.minX || screenX >= bounds.maxX || screenY < bounds.minY || screenY >= bounds.maxY) {
+                continue
+            }
 
 
             // Calculate brightness based on distance from center (for on-screen view)
@@ -155,8 +167,15 @@ class StarfieldAnimation : LedAnimation {
             for (i in 1 until TRAIL_LENGTH) {
                 val txNorm = star.trailX[i]
                 val tyNorm = star.trailY[i]
-                val trailX = ((txNorm + 1) * width / 2).toInt()
-                val trailY = ((tyNorm + 1) * height / 2).toInt()
+                val trailNormX = (txNorm + 1) / 2.0f
+                val trailNormY = (tyNorm + 1) / 2.0f
+                val trailX = (bounds.minX + trailNormX * gridWidth).toInt()
+                val trailY = (bounds.minY + trailNormY * gridHeight).toInt()
+                
+                // Only draw if within LED grid bounds
+                if (trailX < bounds.minX || trailX >= bounds.maxX || trailY < bounds.minY || trailY >= bounds.maxY) {
+                    continue
+                }
 
                 // Fade trail brightness over history; i=1 is brightest, last is dimmest
                 val trailFactor = (TRAIL_LENGTH - i) / TRAIL_LENGTH.toFloat()

@@ -49,12 +49,15 @@ class PerlinOscillatorAnimation : LedAnimation {
         noiseY = random!!.nextFloat() * 100
 
 
-        // Create oscillators in a grid
+        // Get LED grid bounds to constrain oscillators to LED area
+        val bounds = ledGrid.getGridBounds(width, height)
+
+        // Create oscillators in a grid, constrained to LED grid bounds
         oscillators = ArrayList<Oscillator>()
-        var x = 0
-        while (x <= width) {
-            var y = 0
-            while (y <= height) {
+        var x = bounds.minX
+        while (x <= bounds.maxX) {
+            var y = bounds.minY
+            while (y <= bounds.maxY) {
                 oscillators!!.add(Oscillator(x, y))
                 y += SPACING
             }

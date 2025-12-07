@@ -15,17 +15,20 @@ enum class AnimationType(
     val id: String,
     displayName: String
 ) {
+    AKEMI("akemi", "Akemi Animation"),
     AUDIO_VISUALIZER("audio-visualizer", "Audio Visualizer"),
     BLACK_HOLE("black-hole", "Black Hole Animation"),
     BLURZ("blurz", "Blurz Animation"),
     BOUNCING_BALL("bouncing-ball", "Bouncing Ball Animation"),
     CLOUDS("clouds", "Clouds Animation"),
+    FALLING_SNOW("falling-snow", "Falling Snow Animation"),
     FAST_PLASMA("fast-plasma", "Fast Plasma Animation"),
     MUSIC_BALL("music-ball", "Music Ball Animation"),
     PERLIN_OSCILLATOR("perlin-oscillator", "Perlin Oscillator Animation"),
     SOUND_BUBBLE("sound-bubble", "Sound Bubble Animation"),
     SPINNING_BEACHBALL("spinning-beachball", "Spinning Beachball Animation"),
     STARFIELD("starfield", "Starfield Animation"),
+    TRON_RECOGNIZER("tron-recognizer", "Tron Recognizer Animation"),
     VIDEO_PLAYER("video-player", "Video Player Animation");
 
     /**
@@ -74,17 +77,20 @@ enum class AnimationType(
 
         fun createAnimation(animationType: AnimationType): LedAnimation =
             when (animationType) {
+                AnimationType.AKEMI -> AkemiAnimation()
                 AnimationType.AUDIO_VISUALIZER -> AudioVisualizerAnimation()
                 AnimationType.BLACK_HOLE -> BlackHoleAnimation()
                 AnimationType.BLURZ -> BlurzAnimation()
                 AnimationType.BOUNCING_BALL -> BouncingBallAnimation()
                 AnimationType.CLOUDS -> CloudsAnimation()
+                AnimationType.FALLING_SNOW -> FallingSnowAnimation()
                 AnimationType.FAST_PLASMA -> FastPlasmaAnimation()
                 AnimationType.MUSIC_BALL -> MusicBallAnimation()
                 AnimationType.PERLIN_OSCILLATOR -> PerlinOscillatorAnimation()
                 AnimationType.SOUND_BUBBLE -> SoundBubbleAnimation()
                 AnimationType.SPINNING_BEACHBALL -> SpinningBeachballAnimation()
                 AnimationType.STARFIELD -> StarfieldAnimation()
+                AnimationType.TRON_RECOGNIZER -> TronRecognizerAnimation()
                 AnimationType.VIDEO_PLAYER -> VideoPlayerAnimation()
             }
     }
