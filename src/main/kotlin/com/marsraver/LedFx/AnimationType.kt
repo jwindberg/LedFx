@@ -68,30 +68,23 @@ enum class AnimationType(
                 return sb.toString()
             }
 
-
-        fun createAnimation(animationId: String?): LedAnimation {
-            val animationType = fromId(animationId)
-                ?: error("Unknown animation id '$animationId'")
-            return createAnimation(animationType)
-        }
-
         fun createAnimation(animationType: AnimationType): LedAnimation =
             when (animationType) {
-                AnimationType.AKEMI -> AkemiAnimation()
-                AnimationType.AUDIO_VISUALIZER -> AudioVisualizerAnimation()
-                AnimationType.BLACK_HOLE -> BlackHoleAnimation()
-                AnimationType.BLURZ -> BlurzAnimation()
-                AnimationType.BOUNCING_BALL -> BouncingBallAnimation()
-                AnimationType.CLOUDS -> CloudsAnimation()
-                AnimationType.FALLING_SNOW -> FallingSnowAnimation()
-                AnimationType.FAST_PLASMA -> FastPlasmaAnimation()
-                AnimationType.MUSIC_BALL -> MusicBallAnimation()
-                AnimationType.PERLIN_OSCILLATOR -> PerlinOscillatorAnimation()
-                AnimationType.SOUND_BUBBLE -> SoundBubbleAnimation()
-                AnimationType.SPINNING_BEACHBALL -> SpinningBeachballAnimation()
-                AnimationType.STARFIELD -> StarfieldAnimation()
-                AnimationType.TRON_RECOGNIZER -> TronRecognizerAnimation()
-                AnimationType.VIDEO_PLAYER -> VideoPlayerAnimation()
+                AKEMI -> AkemiAnimation()
+                AUDIO_VISUALIZER -> AudioVisualizerAnimation()
+                BLACK_HOLE -> BlackHoleAnimation()
+                BLURZ -> BlurzAnimation()
+                BOUNCING_BALL -> BouncingBallAnimation()
+                CLOUDS -> CloudsAnimation()
+                FALLING_SNOW -> FallingSnowAnimation()
+                FAST_PLASMA -> FastPlasmaAnimation()
+                MUSIC_BALL -> MusicBallAnimation()
+                PERLIN_OSCILLATOR -> PerlinOscillatorAnimation()
+                SOUND_BUBBLE -> SoundBubbleAnimation()
+                SPINNING_BEACHBALL -> SpinningBeachballAnimation()
+                STARFIELD -> StarfieldAnimation()
+                TRON_RECOGNIZER -> TronRecognizerAnimation()
+                VIDEO_PLAYER -> VideoPlayerAnimation()
             }
     }
 }
